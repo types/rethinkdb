@@ -1,0 +1,11 @@
+{
+  "name": "rethinkdb",
+  "version": "2.3.0",
+  "main": "rethinkdb.d.ts",
+  "globalDependencies": {
+    "node": "registry:env/node#6.0.0+20160824014937"
+  },
+  "dependencies": {
+    "bluebird": "registry:npm/bluebird#3.4.1+20160811213708"
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "compilerOptions": {
+    "target": "es6",
+    "module": "commonjs",
+    "noImplicitAny": true
+  },
+  "files": [
+    "test.ts",
+    "rethinkdb.d.ts",
+    "typings/index.d.ts"
+  ]
+}
