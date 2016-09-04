@@ -13,22 +13,22 @@ import { EventEmitter } from 'events';
  * RethinkDB data types:
  *
  * - `RDb`
- * - `RTableSlice` (implements `RSelection`)
+ * - `RTableSlice` (extends `RSelection`)
  * - `RTable` (extends `RTableSlice`)
  * - `RStream`
- * - `RSelection` (note: `RSingleSelection` is a `RSelection<RObject>`)
+ * - `RSelection`
+ * - `RSelectionObject`
  * - `RBinary`
  * - `RTime`
  * - `RGeometry` (extended by `RLine`, `RPoint`, `RPolygon`, etc)
  * - `RGroupedStream`
  *
  * Note: Sequence types are `RArray`, `RStream`, `RSelection` and `RTableSlice`.
- * Note: Single selection is an older term for `Selection<Object>`.
+ * Note: All datum types extend `RValue`.
  */
 
 declare namespace rethinkdb {
   export interface RArray <T> extends
-    Run<T[]>,
     RValue<T[]>,
     r.Add<r.ArrayLike<T>>,
     r.Append<T>,
@@ -59,8 +59,8 @@ declare namespace rethinkdb {
     r.Zip<RArray<Left & Right>> {}
 
   export interface RStream <T> extends
-    RAny,
-    Run<Cursor<T>>,
+    r.Run<Cursor<T>>,
+    r.Query,
     r.Changes<T>,
     r.OrderBy.Sequence<T>,
     r.Union.Stream<T>,
@@ -82,8 +82,9 @@ declare namespace rethinkdb {
     r.Zip<RStream<Left & Right>> {}
 
   export interface RSelection <T> extends
-    RAny,
-    Run<Cursor<T>>,
+    r.Run<Cursor<T>>,
+    r.Operations<T>,
+    r.Query,
     r.CoerceTo,
     r.ToJSON,
     r.Changes<T>,
@@ -112,12 +113,12 @@ declare namespace rethinkdb {
     r.GetField.Stream,
     r.HasFields<RStream<T>>,
     r.Sample<RArray<T>>,
-    r.Nth.Selection<T>,
-    r.Operations<T> {}
+    r.Nth.Selection<T> {}
 
   export interface RValue <T> extends
-    RAny,
-    Run<T>,
+    r.Run<T>,
+    r.Do,
+    r.Query,
     r.CoerceTo,
     r.ToJSON,
     r.Default<T>,
@@ -235,37 +236,10 @@ declare namespace rethinkdb {
     r.Keys,
     r.Values<any> {}
 
-  export interface RSingleSelection <T> extends
+  export interface RSelectionObject <T> extends
     RObject<T>,
     r.Operations<T>,
     r.Changes<T> {}
-
-  export interface RAny {
-    /**
-     * Call an anonymous function using return values from other ReQL commands or queries as arguments.
-     *
-     * https://rethinkdb.com/api/javascript/do
-     */
-    do <R extends RAny, Arg1 extends RAny, Arg2 extends RAny, Arg3 extends RAny> (arg1: Arg1, arg2: Arg2, arg3: Arg3, expr: (arg1: Arg1, arg2: Arg2, arg3: Arg3) => R): R;
-    do <R extends RAny, Arg1 extends RAny, Arg2 extends RAny> (arg1: Arg1, arg2: Arg2, expr: (arg1: Arg1, arg2: Arg2) => R): R;
-    do <R extends RAny, Arg1 extends RAny> (arg1: Arg1, expr: (arg1: Arg1) => R): R;
-    do <R extends RAny> (expr: (thisObject: this) => R): R;
-    do <R extends RAny, Arg extends RAny> (...argsAndFunction: (Arg | ((thisObject: this) => R))[]): R;
-
-    /**
-     * Get information about a ReQL value.
-     *
-     * https://rethinkdb.com/api/javascript/info
-     */
-    info (): RObject<any>;
-
-    /**
-     * Gets the type of a value.
-     *
-     * https://rethinkdb.com/api/javascript/type_of
-     */
-    typeOf (): RString<TypeOf>;
-  }
 
   export type TypeOf = 'Array' | 'BOOL' | 'DB' | 'Function' | 'GROUPED_DATA' |
     'GROUPED_STREAM' | 'MAXVAL' | 'MINVAL' | 'NULL' | 'NUMBER' | 'OBJECT' |
@@ -707,9 +681,9 @@ declare namespace rethinkdb {
   type NestedFieldsSelector = string | string[] | NestedFieldsObject | NestedFieldsObject[];
 
   export interface RTableSlice <T> extends
-    RConfigurable,
-    Run<Cursor<T>>,
-    RAny,
+    r.Run<Cursor<T>>,
+    r.Query,
+    r.Configurable,
     r.Operations<T>,
     r.Changes<T>,
     r.Skip,
@@ -729,7 +703,6 @@ declare namespace rethinkdb {
     r.Reduce<T>,
     r.Slice,
     r.Sum<T>,
-    Run<Cursor<T>>,
     r.Union.Stream<T>,
     r.ConcatMap.Stream<T>,
     r.Filter<T>,
@@ -757,7 +730,7 @@ declare namespace rethinkdb {
      *
      * https://rethinkdb.com/api/javascript/get
      */
-    get (key: KeyType): RSingleSelection<T>;
+    get (key: KeyType): RSelectionObject<T>;
 
     /**
      * Get all documents where the given value matches the value of the requested index.
@@ -832,7 +805,7 @@ declare namespace rethinkdb {
      *
      * https://rethinkdb.com/api/javascript/status
      */
-    status (): RSingleSelection<StatusResult>;
+    status (): RSelectionObject<StatusResult>;
 
     /**
      * `sync` ensures that writes on a given table are written to permanent storage. Queries that specify soft durability (`{durability: 'soft'}`) do not give such guarantees, so `sync` can be used to ensure the state of these queries. A call to `sync` does not return until all previous writes to the table are persisted.
@@ -847,6 +820,226 @@ declare namespace rethinkdb {
     r.CoerceTo,
     r.Count.Datum,
     r.Slice {}
+
+  export interface RGeometry <T> extends
+    RValue<T>,
+    r.Intersects.Geometry,
+    r.Includes.Geometry {
+    /**
+     * Compute the distance between a point and another geometry object. At least one of the geometry objects specified must be a point.
+     *
+     * https://rethinkdb.com/api/javascript/distance
+     */
+    distance (geometry: RGeometry<T>, options?: DistanceOptions): RNumber<number>;
+
+    /**
+     * Convert a ReQL geometry object to a [GeoJSON](http://geojson.org/) object.
+     *
+     * https://rethinkdb.com/api/javascript/to_geojson
+     */
+    toGeojson (): RObject<any>;
+  }
+
+  export interface RPolygon extends RGeometry<Array<[number, number]>> {
+    /**
+     * Use `polygon2` to "punch out" a hole in `polygon1`. `polygon2` must be completely contained within `polygon1` and must have no holes itself (it must not be the output of `polygonSub` itself).
+     *
+     * https://rethinkdb.com/api/javascript/polygon_sub
+     */
+    polygonSub (polygon2: RPolygon): RPolygon;
+  }
+
+  export interface RLine extends RGeometry<Array<number>> {
+    /**
+     * Convert a Line object into a Polygon object. If the last point does not specify the same coordinates as the first point, `polygon` will close the polygon by connecting them.
+     *
+     * https://rethinkdb.com/api/javascript/fill
+     */
+    fill (): RPolygon;
+  }
+
+  export interface RPoint extends RGeometry<[number, number]> {}
+
+  export interface RGroupedStream <Group, Reduction> extends RStream<GroupResult<Group, Reduction>> {
+    /**
+     * Takes a grouped stream or grouped data and turns it into an array of objects representing the groups. Any commands chained after `ungroup` will operate on this array, rather than operating on each group individually. This is useful if you want to e.g. order the groups by the value of their reduction.
+     *
+     * https://rethinkdb.com/api/javascript/ungroup
+     */
+    ungroup (): RArray<GroupResult<Group, Reduction>>;
+  }
+
+  export interface WaitOptions {
+    /**
+     * A string indicating a table status to wait on before returning, one of `ready_for_outdated_reads`, `ready_for_reads`, `ready_for_writes`, or `all_replicas_ready`. The default is `all_replicas_ready`.
+     */
+    waitFor?: 'ready_for_outdated_reads' | 'ready_for_reads' | 'ready_for_writes' | 'all_replicas_ready';
+    /**
+     * A number indicating maximum time, in seconds, to wait for the table to be ready. If this value is exceeded, a `ReqlRuntimeError` will be thrown. A value of `0` means no timeout. The default is `0` (no timeout).
+     */
+    timeout?: number;
+  }
+
+  export interface WaitResult {
+    ready: number;
+  }
+
+  export interface ReconfigureOptions {
+    /**
+     * The number of shards, an integer from 1-64. Required.
+     */
+    shards: number;
+    /**
+     * Either an integer or a mapping object. Required.
+     *
+     * - If `replicas` is an integer, it specifies the number of replicas per shard. Specifying more replicas than there are servers will return an error.
+     * - If `replicas` is an object, it specifies key-value pairs of server tags and the number of replicas to assign to those servers: `{tag1: 2, tag2: 4, tag3: 2, ...}`.
+     */
+    replicas: number | { [tag: string]: number };
+    /**
+     * The primary server specified by its server tag. Required if `replicas` is an object; the tag must be in the object. This must not be specified if `replicas` is an integer.
+     */
+    primaryReplicaTag?: string;
+    /**
+     * If `true` the generated configuration will not be applied to the table, only returned.
+     */
+    dryRun?: boolean;
+    /**
+     * Replicas with these server tags will be added to the nonvoting_replicas list of the resulting configuration. (See failover for details about non-voting replicas.)
+     */
+    nonvotingReplicaTags?: string[];
+    /**
+     * Used for the Emergency Repair mode.
+     */
+    emergencyRepair?: 'unsafe_rollback' | 'unsafe_rollback_or_erase';
+  }
+
+  export interface ReconfigureResult {
+    /**
+     * The number of tables reconfigured. This will be `0` if `dryRun` is `true`.
+     */
+    reconfigured: number;
+    /**
+     * A list of new and old table configuration values.
+     */
+    config_changes: ChangeSet<Config, Config>;
+    /**
+     * A list of new and old table status values.
+     */
+    status_changes: ChangeSet<StatusResult, StatusResult>;
+  }
+
+  export interface RebalanceResult {
+    rebalanced: number;
+    status_changes: ChangeSet<StatusResult, StatusResult>;
+  }
+
+  export interface RDb extends r.Configurable, r.Query {
+    /**
+     * Select all documents in a table. This command can be chained with other commands to do further processing on the data.
+     *
+     * https://rethinkdb.com/api/javascript/table
+     */
+    table <T> (name: r.StringLike<string>, options?: TableOptions): RTable<T>;
+
+    /**
+     * Create a table. A RethinkDB table is a collection of JSON documents.
+     *
+     * https://rethinkdb.com/api/javascript/table_create
+     */
+    tableCreate (tableName: r.StringLike<string>, options?: TableCreateOptions): RObject<TableCreateResult>;
+
+    /**
+     * Drop a table. The table and all its data will be deleted.
+     *
+     * https://rethinkdb.com/api/javascript/table_drop
+     */
+    tableDrop (tableName: r.StringLike<string>): RObject<TableDropResult>;
+
+    /**
+     * List all table names in a database. The result is a list of strings.
+     *
+     * https://rethinkdb.com/api/javascript/table_list
+     */
+    tableList (): RArray<string>;
+  }
+
+  interface JoinFunction <U> {
+    (left: RObject<any>, right: RObject<any>): U;
+  }
+
+  interface GroupResult <Group, Reduction> {
+    group: Group;
+    reduction: Array<Reduction>;
+  }
+
+  interface JoinResult <Left, Right> {
+    left: Left;
+    right: Right;
+  }
+
+  export interface RunOptions {
+    /**
+     * One of three possible values affecting the consistency guarantee for the query (default: `'single'`).
+     *
+     * - `'single'` (the default) returns values that are in memory (but not necessarily written to disk) on the primary replica.
+     * - `'majority'` will only return values that are safely committed on disk on a majority of replicas. This requires sending a message to every replica on each read, so it is the slowest but most consistent.
+     * - `'outdated'` will return values that are in memory on an arbitrarily-selected replica. This is the fastest but least consistent.
+     */
+    readMode?: 'single' | 'majority' | 'outdated';
+    /**
+     * What format to return times in (default: `'native'`). Set this to `'raw'` if you want times returned as JSON objects for exporting.
+     */
+    timeFormat?: 'native' | 'raw';
+    /**
+     * Whether or not to return a profile of the query’s execution (default: `false`).
+     */
+    profile?: boolean;
+    /**
+     * Possible values are `'hard'` and `'soft'`. In soft durability mode RethinkDB will acknowledge the write immediately after receiving it, but before the write has been committed to disk.
+     */
+    durability?: 'hard' | 'soft';
+    /**
+     * What format to return `grouped_data` and `grouped_streams` in (default: `'native'`). Set this to `'raw'` if you want the raw pseudotype.
+     */
+    groupFormat?: 'native' | 'raw';
+    /**
+     * Set to `true` to not receive the result object or cursor and return immediately.
+     */
+    noreply?: boolean;
+    /**
+     * The database to run this query against as a string. The default is the database specified in the `db` parameter to connect (which defaults to `test`). The database may also be specified with the db command.
+     */
+    db?: string;
+    /**
+     * The maximum numbers of array elements that can be returned by a query (default: 100,000). This affects all ReQL commands that return arrays. Note that it has no effect on the size of arrays being written to the database; those always have an upper limit of 100,000 elements.
+     */
+    arrayLimit?: number;
+    /**
+     * What format to return binary data in (default: `'native'`). Set this to `'raw'` if you want the raw pseudotype.
+     */
+    binaryFormat?: 'native' | 'raw';
+    /**
+     * Minimum number of rows to wait for before batching a result set (default: 8). This is an integer.
+     */
+    minBatchRows?: number;
+    /**
+     * Maximum number of rows to wait for before batching a result set (default: unlimited). This is an integer.
+     */
+    maxBatchRows?: number;
+    /**
+     * Maximum number of bytes to wait for before batching a result set (default: 1MB). This is an integer.
+     */
+    maxBatchBytes?: number;
+    /**
+     * Maximum number of seconds to wait before batching a result set (default: 0.5). This is a float (not an integer) and may be specified to the microsecond.
+     */
+    maxBatchSeconds?: number;
+    /**
+     * Factor to scale the other parameters down by on the first batch (default: 4). For example, with this set to 8 and `maxBatchRows` set to 80, on the first batch `maxBatchRows` will be adjusted to 10 (80 / 8). This allows the first batch to return faster.
+     */
+    firstBatchScaledownFactor?: number;
+  }
 
   namespace r {
     type NumberLike <T extends number> = (() => T | RValue<T>) | T | RValue<T>;
@@ -1450,7 +1643,7 @@ declare namespace rethinkdb {
     }
 
     namespace Merge {
-      type MergeParam <T> = RSingleSelection<any> | ((item: RObject<T>) => (RObject<any> | { [key: string]: any }));
+      type MergeParam <T> = RSelectionObject<any> | ((item: RObject<T>) => (RObject<any> | { [key: string]: any }));
 
       interface Array <T> {
         /**
@@ -1881,7 +2074,7 @@ declare namespace rethinkdb {
          *
          * https://rethinkdb.com/api/javascript/nth
          */
-        nth (index: r.NumberLike<number>): RSingleSelection<T>;
+        nth (index: r.NumberLike<number>): RSelectionObject<T>;
       }
     }
 
@@ -1984,7 +2177,7 @@ declare namespace rethinkdb {
       changes (options?: StreamOptions): RStream<ChangeFeed<T> | ChangeState>;
     }
 
-    export interface Operations <T> extends RAny {
+    export interface Operations <T> {
       /**
        * Delete one or more documents from a table.
        *
@@ -2026,7 +2219,7 @@ declare namespace rethinkdb {
       coerceTo <T> (type: 'array'): RArray<T>;
       coerceTo <T> (type: 'object'): RObject<T>;
       coerceTo (type: 'binary'): RBinary;
-      coerceTo (type: string): RAny;
+      coerceTo (type: string): RValue<any>;
     }
 
     export interface ToJSON {
@@ -2044,54 +2237,72 @@ declare namespace rethinkdb {
        */
       toJSON (): RString<string>;
     }
-  }
 
-  export interface RGeometry <T> extends
-    RValue<T>,
-    r.Intersects.Geometry,
-    r.Includes.Geometry {
-    /**
-     * Compute the distance between a point and another geometry object. At least one of the geometry objects specified must be a point.
-     *
-     * https://rethinkdb.com/api/javascript/distance
-     */
-    distance (geometry: RGeometry<T>, options?: DistanceOptions): RNumber<number>;
+    export interface Configurable {
+      /**
+       * Query (read and/or update) the configurations for individual tables or databases.
+       *
+       * https://rethinkdb.com/api/javascript/config
+       */
+      config (): RSelectionObject<Config>;
 
-    /**
-     * Convert a ReQL geometry object to a [GeoJSON](http://geojson.org/) object.
-     *
-     * https://rethinkdb.com/api/javascript/to_geojson
-     */
-    toGeojson (): RObject<any>;
-  }
+      /**
+       * Rebalances the shards of a table. When called on a database, all the tables in that database will be rebalanced.
+       *
+       * https://rethinkdb.com/api/javascript/rebalance
+       */
+      rebalance (): RObject<RebalanceResult>;
 
-  export interface RPolygon extends RGeometry<Array<[number, number]>> {
-    /**
-     * Use `polygon2` to "punch out" a hole in `polygon1`. `polygon2` must be completely contained within `polygon1` and must have no holes itself (it must not be the output of `polygonSub` itself).
-     *
-     * https://rethinkdb.com/api/javascript/polygon_sub
-     */
-    polygonSub (polygon2: RPolygon): RPolygon;
-  }
+      /**
+       * Reconfigure a table's sharding and replication.
+       *
+       * https://rethinkdb.com/api/javascript/reconfigure
+       */
+      reconfigure (options: ReconfigureOptions): RObject<ReconfigureResult>;
 
-  export interface RLine extends RGeometry<Array<number>> {
-    /**
-     * Convert a Line object into a Polygon object. If the last point does not specify the same coordinates as the first point, `polygon` will close the polygon by connecting them.
-     *
-     * https://rethinkdb.com/api/javascript/fill
-     */
-    fill (): RPolygon;
-  }
+      /**
+       * Wait for a table or all the tables in a database to be ready. A table may be temporarily unavailable after creation, rebalancing or reconfiguring. The `wait` command blocks until the given table (or database) is fully up to date.
+       *
+       * https://rethinkdb.com/api/javascript/wait
+       */
+      wait (options?: WaitOptions): RObject<WaitResult>;
+    }
 
-  export interface RPoint extends RGeometry<[number, number]> {}
+    export interface Do {
+      /**
+       * Call an anonymous function using return values from other ReQL commands or queries as arguments.
+       *
+       * https://rethinkdb.com/api/javascript/do
+       */
+      do <R> (doFunction: (thisObject: this) => R): R;
+    }
 
-  export interface RGroupedStream <Group, Reduction> extends RStream<GroupResult<Group, Reduction>> {
-    /**
-     * Takes a grouped stream or grouped data and turns it into an array of objects representing the groups. Any commands chained after `ungroup` will operate on this array, rather than operating on each group individually. This is useful if you want to e.g. order the groups by the value of their reduction.
-     *
-     * https://rethinkdb.com/api/javascript/ungroup
-     */
-    ungroup (): RArray<GroupResult<Group, Reduction>>;
+    export interface Query {
+      /**
+       * Get information about a ReQL value.
+       *
+       * https://rethinkdb.com/api/javascript/info
+       */
+      info (): RObject<any>;
+
+      /**
+       * Gets the type of a value.
+       *
+       * https://rethinkdb.com/api/javascript/type_of
+       */
+      typeOf (): RString<TypeOf>;
+    }
+
+    export interface Run <T> {
+      /**
+       * Run a query on a connection. The callback will get either an error, a single JSON result, or a cursor, depending on the query.
+       *
+       * https://rethinkdb.com/api/javascript/run
+       */
+      run (connection: Connection, cb: Callback<T>): void;
+      run (connection: Connection, options: RunOptions, cb: Callback<T>): void;
+      run (connection: Connection, options?: RunOptions): Bluebird<T>;
+    }
   }
 
   export interface RandomOptions {
@@ -2207,9 +2418,9 @@ declare namespace rethinkdb {
    *
    * https://rethinkdb.com/api/javascript/branch
    */
-  export function branch <T extends RAny> (test: r.BooleanLike<boolean>, trueAction: T, test2: r.BooleanLike<boolean>, test2Action: T, falseAction: T): T;
-  export function branch <T extends RAny> (test: r.BooleanLike<boolean>, trueAction: T, falseAction: T): T;
-  export function branch <T extends RAny> (test: r.BooleanLike<boolean>, ...testsAndActions: (T | r.BooleanLike<boolean>)[]): T;
+  export function branch <T extends RValue<any>> (test: r.BooleanLike<boolean>, trueAction: T, test2: r.BooleanLike<boolean>, test2Action: T, falseAction: T): T;
+  export function branch <T extends RValue<any>> (test: r.BooleanLike<boolean>, trueAction: T, falseAction: T): T;
+  export function branch <T extends RValue<any>> (test: r.BooleanLike<boolean>, ...testsAndActions: (T | r.BooleanLike<boolean>)[]): T;
   export function branch <T extends number> (test: r.BooleanLike<boolean>, trueAction: r.NumberLike<T>, test2: r.BooleanLike<boolean>, test2Action: r.NumberLike<T>, falseAction: r.NumberLike<T>): RNumber<T>;
   export function branch <T extends number> (test: r.BooleanLike<boolean>, trueAction: r.NumberLike<T>, falseAction: r.NumberLike<T>): RNumber<T>;
   export function branch <T extends number> (test: r.BooleanLike<boolean>, ...testsAndActions: (r.NumberLike<T> | r.BooleanLike<boolean>)[]): RNumber<T>;
@@ -2611,214 +2822,6 @@ declare namespace rethinkdb {
      */
     server (callback: Callback<ServerInfo>): void;
     server (): Bluebird<ServerInfo>;
-  }
-
-  export interface WaitOptions {
-    /**
-     * A string indicating a table status to wait on before returning, one of `ready_for_outdated_reads`, `ready_for_reads`, `ready_for_writes`, or `all_replicas_ready`. The default is `all_replicas_ready`.
-     */
-    waitFor?: 'ready_for_outdated_reads' | 'ready_for_reads' | 'ready_for_writes' | 'all_replicas_ready';
-    /**
-     * A number indicating maximum time, in seconds, to wait for the table to be ready. If this value is exceeded, a `ReqlRuntimeError` will be thrown. A value of `0` means no timeout. The default is `0` (no timeout).
-     */
-    timeout?: number;
-  }
-
-  export interface WaitResult {
-    ready: number;
-  }
-
-  export interface ReconfigureOptions {
-    /**
-     * The number of shards, an integer from 1-64. Required.
-     */
-    shards: number;
-    /**
-     * Either an integer or a mapping object. Required.
-     *
-     * - If `replicas` is an integer, it specifies the number of replicas per shard. Specifying more replicas than there are servers will return an error.
-     * - If `replicas` is an object, it specifies key-value pairs of server tags and the number of replicas to assign to those servers: `{tag1: 2, tag2: 4, tag3: 2, ...}`.
-     */
-    replicas: number | { [tag: string]: number };
-    /**
-     * The primary server specified by its server tag. Required if `replicas` is an object; the tag must be in the object. This must not be specified if `replicas` is an integer.
-     */
-    primaryReplicaTag?: string;
-    /**
-     * If `true` the generated configuration will not be applied to the table, only returned.
-     */
-    dryRun?: boolean;
-    /**
-     * Replicas with these server tags will be added to the nonvoting_replicas list of the resulting configuration. (See failover for details about non-voting replicas.)
-     */
-    nonvotingReplicaTags?: string[];
-    /**
-     * Used for the Emergency Repair mode.
-     */
-    emergencyRepair?: 'unsafe_rollback' | 'unsafe_rollback_or_erase';
-  }
-
-  export interface ReconfigureResult {
-    /**
-     * The number of tables reconfigured. This will be `0` if `dryRun` is `true`.
-     */
-    reconfigured: number;
-    /**
-     * A list of new and old table configuration values.
-     */
-    config_changes: ChangeSet<Config, Config>;
-    /**
-     * A list of new and old table status values.
-     */
-    status_changes: ChangeSet<StatusResult, StatusResult>;
-  }
-
-  export interface RebalanceResult {
-    rebalanced: number;
-    status_changes: ChangeSet<StatusResult, StatusResult>;
-  }
-
-  export interface RConfigurable extends RAny {
-    /**
-     * Query (read and/or update) the configurations for individual tables or databases.
-     *
-     * https://rethinkdb.com/api/javascript/config
-     */
-    config (): RSingleSelection<Config>;
-
-    /**
-     * Rebalances the shards of a table. When called on a database, all the tables in that database will be rebalanced.
-     *
-     * https://rethinkdb.com/api/javascript/rebalance
-     */
-    rebalance (): RObject<RebalanceResult>;
-
-    /**
-     * Reconfigure a table's sharding and replication.
-     *
-     * https://rethinkdb.com/api/javascript/reconfigure
-     */
-    reconfigure (options: ReconfigureOptions): RObject<ReconfigureResult>;
-
-    /**
-     * Wait for a table or all the tables in a database to be ready. A table may be temporarily unavailable after creation, rebalancing or reconfiguring. The `wait` command blocks until the given table (or database) is fully up to date.
-     *
-     * https://rethinkdb.com/api/javascript/wait
-     */
-    wait (options?: WaitOptions): RObject<WaitResult>;
-  }
-
-  export interface RDb extends RConfigurable, RAny {
-    /**
-     * Select all documents in a table. This command can be chained with other commands to do further processing on the data.
-     *
-     * https://rethinkdb.com/api/javascript/table
-     */
-    table <T> (name: r.StringLike<string>, options?: TableOptions): RTable<T>;
-
-    /**
-     * Create a table. A RethinkDB table is a collection of JSON documents.
-     *
-     * https://rethinkdb.com/api/javascript/table_create
-     */
-    tableCreate (tableName: r.StringLike<string>, options?: TableCreateOptions): RObject<TableCreateResult>;
-
-    /**
-     * Drop a table. The table and all its data will be deleted.
-     *
-     * https://rethinkdb.com/api/javascript/table_drop
-     */
-    tableDrop (tableName: r.StringLike<string>): RObject<TableDropResult>;
-
-    /**
-     * List all table names in a database. The result is a list of strings.
-     *
-     * https://rethinkdb.com/api/javascript/table_list
-     */
-    tableList (): RArray<string>;
-  }
-
-  interface JoinFunction <U> {
-    (left: RObject<any>, right: RObject<any>): U;
-  }
-
-  interface GroupResult <Group, Reduction> {
-    group: Group;
-    reduction: Array<Reduction>;
-  }
-
-  interface JoinResult <Left, Right> {
-    left: Left;
-    right: Right;
-  }
-
-  export interface RunOptions {
-    /**
-     * One of three possible values affecting the consistency guarantee for the query (default: `'single'`).
-     *
-     * - `'single'` (the default) returns values that are in memory (but not necessarily written to disk) on the primary replica.
-     * - `'majority'` will only return values that are safely committed on disk on a majority of replicas. This requires sending a message to every replica on each read, so it is the slowest but most consistent.
-     * - `'outdated'` will return values that are in memory on an arbitrarily-selected replica. This is the fastest but least consistent.
-     */
-    readMode?: 'single' | 'majority' | 'outdated';
-    /**
-     * What format to return times in (default: `'native'`). Set this to `'raw'` if you want times returned as JSON objects for exporting.
-     */
-    timeFormat?: 'native' | 'raw';
-    /**
-     * Whether or not to return a profile of the query’s execution (default: `false`).
-     */
-    profile?: boolean;
-    /**
-     * Possible values are `'hard'` and `'soft'`. In soft durability mode RethinkDB will acknowledge the write immediately after receiving it, but before the write has been committed to disk.
-     */
-    durability?: 'hard' | 'soft';
-    /**
-     * What format to return `grouped_data` and `grouped_streams` in (default: `'native'`). Set this to `'raw'` if you want the raw pseudotype.
-     */
-    groupFormat?: 'native' | 'raw';
-    /**
-     * Set to `true` to not receive the result object or cursor and return immediately.
-     */
-    noreply?: boolean;
-    /**
-     * The database to run this query against as a string. The default is the database specified in the `db` parameter to connect (which defaults to `test`). The database may also be specified with the db command.
-     */
-    db?: string;
-    /**
-     * The maximum numbers of array elements that can be returned by a query (default: 100,000). This affects all ReQL commands that return arrays. Note that it has no effect on the size of arrays being written to the database; those always have an upper limit of 100,000 elements.
-     */
-    arrayLimit?: number;
-    /**
-     * What format to return binary data in (default: `'native'`). Set this to `'raw'` if you want the raw pseudotype.
-     */
-    binaryFormat?: 'native' | 'raw';
-    /**
-     * Minimum number of rows to wait for before batching a result set (default: 8). This is an integer.
-     */
-    minBatchRows?: number;
-    /**
-     * Maximum number of rows to wait for before batching a result set (default: unlimited). This is an integer.
-     */
-    maxBatchRows?: number;
-    /**
-     * Maximum number of bytes to wait for before batching a result set (default: 1MB). This is an integer.
-     */
-    maxBatchBytes?: number;
-    /**
-     * Maximum number of seconds to wait before batching a result set (default: 0.5). This is a float (not an integer) and may be specified to the microsecond.
-     */
-    maxBatchSeconds?: number;
-    /**
-     * Factor to scale the other parameters down by on the first batch (default: 4). For example, with this set to 8 and `maxBatchRows` set to 80, on the first batch `maxBatchRows` will be adjusted to 10 (80 / 8). This allows the first batch to return faster.
-     */
-    firstBatchScaledownFactor?: number;
-  }
-
-  export interface Run <T> {
-    run (connection: Connection, cb: Callback<T>): void;
-    run (connection: Connection, options: RunOptions, cb: Callback<T>): void;
-    run (connection: Connection, options?: RunOptions): Bluebird<T>;
   }
 }
 
