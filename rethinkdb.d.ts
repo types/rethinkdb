@@ -867,22 +867,6 @@ declare namespace rethinkdb {
     toJSON (): RString<string>;
   }
 
-  export interface RExpression {
-    <T extends number> (expression: r.NumberLike<T>): RNumber<T>;
-    <T extends boolean> (expression: r.BooleanLike<T>): RBoolean<T>;
-    <T extends string> (expression: r.StringLike<T>): RString<T>;
-    <T extends Array<any>> (expression: r.ArrayLike<T>): RArray<T>;
-    <T extends Date> (expression: r.TimeLike): RTime;
-    <T extends RNumber<number>> (expression: r.NumberLike<number>): T;
-    <T extends RBoolean<boolean>> (expression: r.BooleanLike<boolean>): T;
-    <T extends RString<string>> (expression: r.StringLike<string>): T;
-    <T extends RArray<any>> (expression: r.ArrayLike<any>): T;
-    <T extends RObject<any>> (expression: r.ObjectLike<any>): T;
-    <T extends RTime> (expression: r.TimeLike): T;
-    <T extends RGeometry<any>> (expression: T): T;
-    <T extends {}> (expression: r.ObjectLike<any>): RObject<T>;
-  }
-
   namespace r {
     type NumberLike <T extends number> = (() => T | RValue<T>) | T | RValue<T>;
     type StringLike <T extends string> = (() => T | RValue<T>) | T | RValue<T>;
@@ -2312,7 +2296,21 @@ declare namespace rethinkdb {
    *
    * https://rethinkdb.com/api/javascript/expr
    */
-  export function expr <T> (value: T): RDatum<T>;
+  export function expr <T extends number> (expression: r.NumberLike<T>): RNumber<T>;
+  export function expr <T extends boolean> (expression: r.BooleanLike<T>): RBoolean<T>;
+  export function expr <T extends string> (expression: r.StringLike<T>): RString<T>;
+  export function expr <T extends Array<any>> (expression: r.ArrayLike<T>): RArray<T>;
+  export function expr <T extends Date> (expression: r.TimeLike): RTime;
+  export function expr <T extends RNumber<number>> (expression: r.NumberLike<number>): T;
+  export function expr <T extends RBoolean<boolean>> (expression: r.BooleanLike<boolean>): T;
+  export function expr <T extends RString<string>> (expression: r.StringLike<string>): T;
+  export function expr <T extends RArray<any>> (expression: r.ArrayLike<any>): T;
+  export function expr <T extends RObject<any>> (expression: r.ObjectLike<any>): T;
+  export function expr <T extends RTime> (expression: r.TimeLike): T;
+  export function expr <T extends RGeometry<any>> (expression: T): T;
+  export function expr <T extends {}> (expression: r.ObjectLike<any>): RObject<T>;
+  export function expr <T> (expression: RValue<T>): RDatum<T>;
+  export function expr <T> (expression: T): RDatum<T>;
 
   /**
    * Rounds the given value down, returning the largest integer value less than or equal to the given value (the value's floor).
