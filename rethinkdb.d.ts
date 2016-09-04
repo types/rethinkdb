@@ -29,7 +29,8 @@ import { EventEmitter } from 'events';
 
 declare namespace rethinkdb {
   export interface RArray <T> extends
-    RValue<T[]>,
+    RBase<T[]>,
+    r.Run<ArrayResult<T>>,
     r.Add<r.ArrayLike<T>>,
     r.Append<T>,
     r.ChangeAt<T>,
@@ -59,7 +60,7 @@ declare namespace rethinkdb {
     r.Zip<RArray<Left & Right>> {}
 
   export interface RStream <T> extends
-    r.Run<Cursor<T>>,
+    r.Run<CursorResult<T>>,
     r.Query,
     r.Changes<T>,
     r.OrderBy.Sequence<T>,
@@ -82,11 +83,10 @@ declare namespace rethinkdb {
     r.Zip<RStream<Left & Right>> {}
 
   export interface RSelection <T> extends
-    r.Run<Cursor<T>>,
+    r.Run<CursorResult<T>>,
     r.Operations<T>,
     r.Query,
     r.CoerceTo,
-    r.ToJSON,
     r.Changes<T>,
     r.Operators<T>,
     r.Avg<T>,
@@ -115,8 +115,7 @@ declare namespace rethinkdb {
     r.Sample<RArray<T>>,
     r.Nth.Selection<T> {}
 
-  export interface RValue <T> extends
-    r.Run<T>,
+  export interface RBase <T> extends
     r.Do,
     r.Query,
     r.CoerceTo,
@@ -124,13 +123,15 @@ declare namespace rethinkdb {
     r.Default<T>,
     r.Operators<T> {}
 
+  export interface RValue <T> extends
+    RBase<T>,
+    r.Run<T> {}
+
   export interface RDatum <T> extends
     RValue<T>,
     r.Bracket.Datum<T>,
     r.GetField.Object,
     // Object.
-    r.ToJSON,
-    r.CoerceTo,
     r.Count.Datum,
     r.HasFields<RBoolean<boolean>>,
     r.Merge.Object<T>,
@@ -225,8 +226,6 @@ declare namespace rethinkdb {
     RValue<T>,
     r.Bracket.Object,
     r.GetField.Object,
-    r.ToJSON,
-    r.CoerceTo,
     r.Count.Datum,
     r.HasFields<RBoolean<boolean>>,
     r.Merge.Object<T>,
@@ -681,7 +680,7 @@ declare namespace rethinkdb {
   type NestedFieldsSelector = string | string[] | NestedFieldsObject | NestedFieldsObject[];
 
   export interface RTableSlice <T> extends
-    r.Run<Cursor<T>>,
+    r.Run<CursorResult<T>>,
     r.Query,
     r.Configurable,
     r.Operations<T>,
@@ -689,7 +688,6 @@ declare namespace rethinkdb {
     r.Skip,
     r.Limit,
     r.CoerceTo,
-    r.ToJSON,
     r.Avg<T>,
     r.Contains<T>,
     r.Count.Sequence<T>,
@@ -817,7 +815,6 @@ declare namespace rethinkdb {
 
   export interface RBinary extends
     RValue<Buffer>,
-    r.CoerceTo,
     r.Count.Datum,
     r.Slice {}
 
@@ -2303,6 +2300,38 @@ declare namespace rethinkdb {
       run (connection: Connection, options: RunOptions, cb: Callback<T>): void;
       run (connection: Connection, options?: RunOptions): Bluebird<T>;
     }
+
+    export interface Result <T> extends EventEmitter {
+      /**
+       * Lazily iterate over the result set one element at a time.
+       *
+       * https://rethinkdb.com/api/javascript/each
+       */
+      each (callback: Callback<T>, onFinishedCallback?: Callback<T>): void;
+
+      /**
+       * Lazily iterate over a cursor, array, or feed one element at a time. `eachAsync` always returns a promise that will be resolved once all rows are returned.
+       *
+       * https://rethinkdb.com/api/javascript/each_async
+       */
+      eachAsync (processFunction: (element: T, rowFinished?: (err: any) => void) => any, finalFunction?: (err?: Error) => any): Bluebird<void>;
+
+      /**
+       * Get the next element in the cursor.
+       *
+       * https://rethinkdb.com/api/javascript/next
+       */
+      next (callback: Callback<T>): void;
+      next (): Bluebird<T>;
+
+      /**
+       * Retrieve all results and pass them as an array to the given callback.
+       *
+       * https://rethinkdb.com/api/javascript/to_array
+       */
+      toArray (callback: Callback<Array<T>>): void;
+      toArray (): Bluebird<Array<T>>;
+    }
   }
 
   export interface RandomOptions {
@@ -2741,43 +2770,15 @@ declare namespace rethinkdb {
    */
   export function tableList (): RArray<string>;
 
-  export interface Cursor <T> extends EventEmitter {
+  export interface ArrayResult <T> extends Array<T>, r.Result<T> {}
+
+  export interface CursorResult <T> extends r.Result<T> {
     /**
      * Close a cursor. Closing a cursor cancels the corresponding query and frees the memory associated with the open request.
      *
      * https://rethinkdb.com/api/javascript/close-cursor
      */
     close (): void;
-
-    /**
-     * Lazily iterate over the result set one element at a time.
-     *
-     * https://rethinkdb.com/api/javascript/each
-     */
-    each (callback: Callback<T>, onFinishedCallback?: Callback<T>): void;
-
-    /**
-     * Lazily iterate over a cursor, array, or feed one element at a time. `eachAsync` always returns a promise that will be resolved once all rows are returned.
-     *
-     * https://rethinkdb.com/api/javascript/each_async
-     */
-    eachAsync (processFunction: (element: T, rowFinished?: (err: any) => void) => any, finalFunction?: (err?: Error) => any): Bluebird<void>;
-
-    /**
-     * Get the next element in the cursor.
-     *
-     * https://rethinkdb.com/api/javascript/next
-     */
-    next (callback: Callback<T>): void;
-    next (): Bluebird<T>;
-
-    /**
-     * Retrieve all results and pass them as an array to the given callback.
-     *
-     * https://rethinkdb.com/api/javascript/to_array
-     */
-    toArray (callback: Callback<Array<T>>): void;
-    toArray (): Bluebird<Array<T>>;
   }
 
   export interface Connection extends EventEmitter {
