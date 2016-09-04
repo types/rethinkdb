@@ -28,7 +28,7 @@ import { EventEmitter } from 'events';
 
 declare namespace rethinkdb {
   export interface RArray <T> extends
-    RRunable<T[]>,
+    Run<T[]>,
     RValue<T[]>,
     r.Add<r.ArrayLike<T>>,
     r.Append<T>,
@@ -59,8 +59,9 @@ declare namespace rethinkdb {
     r.Zip<RArray<Left & Right>> {}
 
   export interface RStream <T> extends
-    RObservable<T>,
-    RRunable<Cursor<T>>,
+    RAny,
+    Run<Cursor<T>>,
+    r.Changes<T>,
     r.OrderBy.Sequence<T>,
     r.Union.Stream<T>,
     r.ConcatMap.Stream<T>,
@@ -81,10 +82,11 @@ declare namespace rethinkdb {
     r.Zip<RStream<Left & Right>> {}
 
   export interface RSelection <T> extends
-    RObservable<T>,
     RAny,
-    RCoercable,
-    RToJSON,
+    Run<Cursor<T>>,
+    r.CoerceTo,
+    r.ToJSON,
+    r.Changes<T>,
     r.Operators<T>,
     r.Avg<T>,
     r.Contains<T>,
@@ -103,7 +105,6 @@ declare namespace rethinkdb {
     r.Limit,
     r.Map.Sequence<T>,
     r.OrderBy.Selection<T>,
-    RRunable<Cursor<T>>,
     r.Union.Stream<T>,
     r.ConcatMap.Stream<T>,
     r.Filter<T>,
@@ -112,25 +113,23 @@ declare namespace rethinkdb {
     r.HasFields<RStream<T>>,
     r.Sample<RArray<T>>,
     r.Nth.Selection<T>,
-    ROperations<T> {}
+    r.Operations<T> {}
 
   export interface RValue <T> extends
     RAny,
-    RCoercable,
-    RToJSON,
-    RRunable<T>,
+    Run<T>,
+    r.CoerceTo,
+    r.ToJSON,
     r.Default<T>,
     r.Operators<T> {}
 
   export interface RDatum <T> extends
     RValue<T>,
-    RRunable<T>,
-    RAny,
     r.Bracket.Datum<T>,
     r.GetField.Object,
     // Object.
-    RToJSON,
-    RCoercable,
+    r.ToJSON,
+    r.CoerceTo,
     r.Count.Datum,
     r.HasFields<RBoolean<boolean>>,
     r.Merge.Object<T>,
@@ -222,12 +221,11 @@ declare namespace rethinkdb {
   export interface RSpecial <T> extends RValue<T> {}
 
   export interface RObject <T> extends
-    RAny,
     RValue<T>,
     r.Bracket.Object,
     r.GetField.Object,
-    RToJSON,
-    RCoercable,
+    r.ToJSON,
+    r.CoerceTo,
     r.Count.Datum,
     r.HasFields<RBoolean<boolean>>,
     r.Merge.Object<T>,
@@ -239,8 +237,8 @@ declare namespace rethinkdb {
 
   export interface RSingleSelection <T> extends
     RObject<T>,
-    ROperations<T>,
-    RObservable<T> {}
+    r.Operations<T>,
+    r.Changes<T> {}
 
   export interface RAny {
     /**
@@ -709,16 +707,15 @@ declare namespace rethinkdb {
   type NestedFieldsSelector = string | string[] | NestedFieldsObject | NestedFieldsObject[];
 
   export interface RTableSlice <T> extends
-    RObservable<T>,
-    ROperations<T>,
     RConfigurable,
-    RObservable<T>,
-    RRunable<Cursor<T>>,
+    Run<Cursor<T>>,
     RAny,
+    r.Operations<T>,
+    r.Changes<T>,
     r.Skip,
     r.Limit,
-    RCoercable,
-    RToJSON,
+    r.CoerceTo,
+    r.ToJSON,
     r.Avg<T>,
     r.Contains<T>,
     r.Count.Sequence<T>,
@@ -732,7 +729,7 @@ declare namespace rethinkdb {
     r.Reduce<T>,
     r.Slice,
     r.Sum<T>,
-    RRunable<Cursor<T>>,
+    Run<Cursor<T>>,
     r.Union.Stream<T>,
     r.ConcatMap.Stream<T>,
     r.Filter<T>,
@@ -846,26 +843,10 @@ declare namespace rethinkdb {
   }
 
   export interface RBinary extends
-    RCoercable,
-    RAny,
+    RValue<Buffer>,
+    r.CoerceTo,
     r.Count.Datum,
     r.Slice {}
-
-  export interface RToJSON extends RAny {
-    /**
-     * Convert a ReQL value or object to a JSON string. You may use either `toJsonString` or `toJSON`.
-     *
-     * https://rethinkdb.com/api/javascript/to_json_string
-     */
-    toJsonString (): RString<string>;
-
-    /**
-     * Convert a ReQL value or object to a JSON string. You may use either `toJsonString` or `toJSON`.
-     *
-     * https://rethinkdb.com/api/javascript/to_json_string
-     */
-    toJSON (): RString<string>;
-  }
 
   namespace r {
     type NumberLike <T extends number> = (() => T | RValue<T>) | T | RValue<T>;
@@ -1993,6 +1974,76 @@ declare namespace rethinkdb {
        */
       ne (value: any, ...values: Array<any>): RBoolean<boolean>;
     }
+
+    export interface Changes <T> {
+      /**
+       * Return a changefeed, an infinite stream of objects representing changes to a query. A changefeed may return changes to a table or an individual document (a "point" changefeed), and document transformation commands such as `filter` or `map` may be used before the `changes` command to affect the output.
+       *
+       * https://rethinkdb.com/api/javascript/changes
+       */
+      changes (options?: StreamOptions): RStream<ChangeFeed<T> | ChangeState>;
+    }
+
+    export interface Operations <T> extends RAny {
+      /**
+       * Delete one or more documents from a table.
+       *
+       * https://rethinkdb.com/api/javascript/delete
+       */
+      delete (options?: WriteOptions): RObject<DeleteResult<T>>;
+
+      /**
+       * Insert JSON documents into a table. Accepts a single JSON document or an array of documents.
+       *
+       * https://rethinkdb.com/api/javascript/insert
+       */
+      insert (object: T, options?: InsertOptions<T>): RObject<InsertResult<T>>;
+      insert (...objectsOrOptions: Array<T | InsertOptions<T>>): RObject<InsertResult<T>>;
+
+      /**
+       * Replace documents in a table. Accepts a JSON document or a ReQL expression, and replaces the original document with the new one. The new document must have the same primary key as the original document.
+       *
+       * https://rethinkdb.com/api/javascript/replace
+       */
+      replace (objectOrFunction: T | ((item: RObject<T>) => T), options?: UpdateOptions): RObject<ReplaceResult<T>>;
+
+      /**
+       * Update JSON documents in a table. Accepts a JSON document, a ReQL expression, or a combination of the two. You can pass options like `returnChanges` that will return the old and new values of the row you have modified.
+       *
+       * https://rethinkdb.com/api/javascript/update
+       */
+      update (objectOrFunction: T | ((item: RObject<T>) => T), options?: UpdateOptions): RObject<UpdateResult<T>>;
+    }
+
+    interface CoerceTo {
+      /**
+       * Convert a value of one type into another.
+       *
+       * https://rethinkdb.com/api/javascript/coerce_to
+       */
+      coerceTo <T extends string> (type: 'string'): RString<T>;
+      coerceTo <T extends number> (type: 'number'): RNumber<T>;
+      coerceTo <T> (type: 'array'): RArray<T>;
+      coerceTo <T> (type: 'object'): RObject<T>;
+      coerceTo (type: 'binary'): RBinary;
+      coerceTo (type: string): RAny;
+    }
+
+    export interface ToJSON {
+      /**
+       * Convert a ReQL value or object to a JSON string. You may use either `toJsonString` or `toJSON`.
+       *
+       * https://rethinkdb.com/api/javascript/to_json_string
+       */
+      toJsonString (): RString<string>;
+
+      /**
+       * Convert a ReQL value or object to a JSON string. You may use either `toJsonString` or `toJSON`.
+       *
+       * https://rethinkdb.com/api/javascript/to_json_string
+       */
+      toJSON (): RString<string>;
+    }
   }
 
   export interface RGeometry <T> extends
@@ -2041,46 +2092,6 @@ declare namespace rethinkdb {
      * https://rethinkdb.com/api/javascript/ungroup
      */
     ungroup (): RArray<GroupResult<Group, Reduction>>;
-  }
-
-  export interface RObservable <T> {
-    /**
-     * Return a changefeed, an infinite stream of objects representing changes to a query. A changefeed may return changes to a table or an individual document (a "point" changefeed), and document transformation commands such as `filter` or `map` may be used before the `changes` command to affect the output.
-     *
-     * https://rethinkdb.com/api/javascript/changes
-     */
-    changes (options?: StreamOptions): RStream<ChangeFeed<T> | ChangeState>;
-  }
-
-  export interface ROperations <T> extends RAny {
-    /**
-     * Delete one or more documents from a table.
-     *
-     * https://rethinkdb.com/api/javascript/delete
-     */
-    delete (options?: WriteOptions): RObject<DeleteResult<T>>;
-
-    /**
-     * Insert JSON documents into a table. Accepts a single JSON document or an array of documents.
-     *
-     * https://rethinkdb.com/api/javascript/insert
-     */
-    insert (object: T, options?: InsertOptions<T>): RObject<InsertResult<T>>;
-    insert (...objectsOrOptions: Array<T | InsertOptions<T>>): RObject<InsertResult<T>>;
-
-    /**
-     * Replace documents in a table. Accepts a JSON document or a ReQL expression, and replaces the original document with the new one. The new document must have the same primary key as the original document.
-     *
-     * https://rethinkdb.com/api/javascript/replace
-     */
-    replace (objectOrFunction: T | ((item: RObject<T>) => T), options?: UpdateOptions): RObject<ReplaceResult<T>>;
-
-    /**
-     * Update JSON documents in a table. Accepts a JSON document, a ReQL expression, or a combination of the two. You can pass options like `returnChanges` that will return the old and new values of the row you have modified.
-     *
-     * https://rethinkdb.com/api/javascript/update
-     */
-    update (objectOrFunction: T | ((item: RObject<T>) => T), options?: UpdateOptions): RObject<UpdateResult<T>>;
   }
 
   export interface RandomOptions {
@@ -2727,20 +2738,6 @@ declare namespace rethinkdb {
     tableList (): RArray<string>;
   }
 
-  interface RCoercable {
-    /**
-     * Convert a value of one type into another.
-     *
-     * https://rethinkdb.com/api/javascript/coerce_to
-     */
-    coerceTo <T extends string> (type: 'string'): RString<T>;
-    coerceTo <T extends number> (type: 'number'): RNumber<T>;
-    coerceTo <T> (type: 'array'): RArray<T>;
-    coerceTo <T> (type: 'object'): RObject<T>;
-    coerceTo (type: 'binary'): RBinary;
-    coerceTo (type: string): RAny;
-  }
-
   interface JoinFunction <U> {
     (left: RObject<any>, right: RObject<any>): U;
   }
@@ -2818,7 +2815,7 @@ declare namespace rethinkdb {
     firstBatchScaledownFactor?: number;
   }
 
-  export interface RRunable<T> {
+  export interface Run <T> {
     run (connection: Connection, cb: Callback<T>): void;
     run (connection: Connection, options: RunOptions, cb: Callback<T>): void;
     run (connection: Connection, options?: RunOptions): Bluebird<T>;
