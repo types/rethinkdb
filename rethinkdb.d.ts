@@ -46,7 +46,7 @@ declare namespace rethinkdb {
     r.SetUnion<T>,
     r.Skip,
     r.Limit,
-    r.OffsetsOf.Sequence<T>,
+    r.OffsetsOf<T>,
     r.Union.Array<T>,
     r.SpliceAt<T>,
     r.Count.Datum,
@@ -69,7 +69,7 @@ declare namespace rethinkdb {
     r.Filter<T>,
     r.Bracket.Stream,
     r.GetField.Stream,
-    r.OffsetsOf.Stream<T>,
+    r.OffsetsOf<T>,
     r.Skip,
     r.Limit,
     r.Map.Sequence<T>,
@@ -98,7 +98,7 @@ declare namespace rethinkdb {
     r.IsEmpty,
     r.Max<T>,
     r.Min<T>,
-    r.OffsetsOf.Stream<T>,
+    r.OffsetsOf<T>,
     r.Reduce<T>,
     r.Slice,
     r.Sum<T>,
@@ -170,7 +170,7 @@ declare namespace rethinkdb {
     r.SetUnion<T>,
     r.Skip,
     r.Limit,
-    r.OffsetsOf.Sequence<T>,
+    r.OffsetsOf<T>,
     r.Union.Array<T>,
     r.SpliceAt<T>,
     r.Count.Datum,
@@ -597,19 +597,19 @@ declare namespace rethinkdb {
     config_changes: ChangeSet<Config, void>;
   }
 
-  export interface WriteResult <I, R, U, D, S> {
+  export interface WriteResult <Old, New> {
     /**
      * The number of documents successfully inserted.
      */
-    inserted: I;
+    inserted: number;
     /**
      * The number of documents updated when conflict is set to "replace" or "update".
      */
-    replaced: R;
+    replaced: number;
     /**
      * The number of documents whose fields are identical to existing documents with the same primary key when `conflict` is set to "replace" or "update".
      */
-    unchanged: U;
+    unchanged: number;
     /**
      * The number of errors encountered while performing the insert.
      */
@@ -621,35 +621,18 @@ declare namespace rethinkdb {
     /**
      * The number of documents that were deleted.
      */
-    deleted: D;
+    deleted: number;
     /**
      * The number of documents that were skipped because the document didn’t exist.
      */
-    skipped: S;
-  }
-
-  export interface UpdateResult <T> extends WriteResult<number /* 0 */, number, number, number /* 0 */, number> {
+    skipped: number;
     /**
-     * If `returnChanges` is set to `true`, this will be an array of objects, one for each objected affected by the `update` operation.
+     * If `returnChanges` is set to `true`, this will be an array of objects, one for each objected affected by the operation.
      */
-    changes?: ChangeSet<T, T>;
+    changes?: ChangeSet<Old, New>;
   }
 
-  export interface ReplaceResult <T> extends WriteResult<number, number, number, number, number /* 0 */> {
-    /**
-     * If `returnChanges` is set to `true`, this will be an array of objects, one for each objected affected by the `replace` operation.
-     */
-    changes?: ChangeSet<T, T>;
-  }
-
-  export interface DeleteResult <T> extends WriteResult<number /* 0 */, number /* 0 */, number /* 0 */, number, number> {
-    /**
-     * If `returnChanges` is set to `true`, this will be an array of objects, one for each objected affected by the `delete` operation.
-     */
-    changes?: ChangeSet<T, void>;
-  }
-
-  export interface InsertResult <T> extends WriteResult<number, number, number, number /* 0 */, number /* 0 */> {
+  export interface InsertResult <T> extends WriteResult<void, T> {
     /**
      * A list of generated primary keys for inserted documents whose primary keys were not specified (capped to 100,000).
      */
@@ -658,11 +641,13 @@ declare namespace rethinkdb {
      * If the field generated_keys is truncated, you will get the warning “Too many generated keys (<X>), array truncated to 100000.”.
      */
     warnings: string;
-    /**
-     * If `returnChanges` is set to `true`, this will be an array of objects, one for each objected affected by the `insert` operation.
-     */
-    changes?: ChangeSet<void, T>;
   }
+
+  export interface UpdateResult <T> extends WriteResult<T, T> {}
+
+  export interface ReplaceResult <T> extends WriteResult<T, T> {}
+
+  export interface DeleteResult <T> extends WriteResult<T, void> {}
 
   export interface SyncResult {
     synced: number;
@@ -697,7 +682,7 @@ declare namespace rethinkdb {
     r.IsEmpty,
     r.Max<T>,
     r.Min<T>,
-    r.OffsetsOf.Stream<T>,
+    r.OffsetsOf<T>,
     r.Reduce<T>,
     r.Slice,
     r.Sum<T>,
@@ -2003,7 +1988,7 @@ declare namespace rethinkdb {
        *
        * https://rethinkdb.com/api/javascript/for_each
        */
-      forEach <T extends WriteResult<number, number, number, number, number>> (writeFunction: (item: RValue<T> | RObject<T>) => RObject<T>): RObject<T>;
+      forEach <T, U> (writeFunction: (item: RValue<T> | RObject<T>) => RObject<WriteResult<T, U>>): RObject<WriteResult<T, U>>;
     }
 
     export interface GroupOptions {
@@ -2075,26 +2060,14 @@ declare namespace rethinkdb {
       }
     }
 
-    namespace OffsetsOf {
-      interface Sequence <T> {
-        /**
-         * Get the indexes of an element in a sequence. If the argument is a predicate, get the indexes of all elements matching it.
-         *
-         * https://rethinkdb.com/api/javascript/offsets_of
-         */
-        offsetsOf (predicateFunction: (item: RDatum<T>) => RBoolean<boolean>): RArray<number>;
-        offsetsOf (datum: r.DatumLike): RArray<number>;
-      }
-
-      interface Stream <T> {
-        /**
-         * Get the indexes of an element in a sequence. If the argument is a predicate, get the indexes of all elements matching it.
-         *
-         * https://rethinkdb.com/api/javascript/offsets_of
-         */
-        offsetsOf (predicateFunction: (item: RDatum<T>) => RBoolean<boolean>): RStream<number>;
-        offsetsOf (datum: r.DatumLike): RStream<number>;
-      }
+    interface OffsetsOf <T> {
+      /**
+       * Get the indexes of an element in a sequence. If the argument is a predicate, get the indexes of all elements matching it.
+       *
+       * https://rethinkdb.com/api/javascript/offsets_of
+       */
+      offsetsOf (predicateFunction: (item: RDatum<T>) => RBoolean<boolean>): RArray<number>;
+      offsetsOf (datum: r.DatumLike): RArray<number>;
     }
 
     type ReductionFunction <In, Out> = (left: RDatum<In>, right: RDatum<In>) => Out;
