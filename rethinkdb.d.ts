@@ -581,23 +581,23 @@ declare namespace rethinkdb {
 
   export interface DbCreateResult {
     dbs_created: number;
-    config_changes: ChangeSet<void, Config>;
+    config_changes: ChangeSet<void, Config>[];
   }
 
   export interface DbDropResult {
     dbs_dropped: number;
     tables_dropped: number;
-    config_changes: ChangeSet<Config, void>;
+    config_changes: ChangeSet<Config, void>[];
   }
 
   export interface TableCreateResult {
     tables_created: number;
-    config_changes: ChangeSet<void, Config>;
+    config_changes: ChangeSet<void, Config>[];
   }
 
   export interface TableDropResult {
     tables_dropped: number;
-    config_changes: ChangeSet<Config, void>;
+    config_changes: ChangeSet<Config, void>[];
   }
 
   export interface WriteResult <Old, New> {
@@ -632,7 +632,7 @@ declare namespace rethinkdb {
     /**
      * If `returnChanges` is set to `true`, this will be an array of objects, one for each objected affected by the operation.
      */
-    changes?: ChangeSet<Old, New>;
+    changes?: ChangeSet<Old, New>[];
   }
 
   export interface InsertResult <T> extends WriteResult<void, T> {
@@ -907,16 +907,16 @@ declare namespace rethinkdb {
     /**
      * A list of new and old table configuration values.
      */
-    config_changes: ChangeSet<Config, Config>;
+    config_changes: ChangeSet<Config, Config>[];
     /**
      * A list of new and old table status values.
      */
-    status_changes: ChangeSet<StatusResult, StatusResult>;
+    status_changes: ChangeSet<StatusResult, StatusResult>[];
   }
 
   export interface RebalanceResult {
     rebalanced: number;
-    status_changes: ChangeSet<StatusResult, StatusResult>;
+    status_changes: ChangeSet<StatusResult, StatusResult>[];
   }
 
   export interface RDb extends r.Configurable, r.Query {
