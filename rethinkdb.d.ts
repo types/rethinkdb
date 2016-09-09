@@ -47,6 +47,7 @@ declare namespace rethinkdb {
     r.Skip,
     r.Limit,
     r.OffsetsOf<T>,
+    r.Merge.Array<T>,
     r.Union.Array<T>,
     r.SpliceAt<T>,
     r.Count.Datum,
@@ -72,6 +73,7 @@ declare namespace rethinkdb {
     r.OffsetsOf<T>,
     r.Skip,
     r.Limit,
+    r.Merge.Stream<T>,
     r.Map.Sequence<T>,
     r.Count.Sequence<T>,
     r.HasFields<RStream<T>>,
@@ -104,6 +106,7 @@ declare namespace rethinkdb {
     r.Sum<T>,
     r.Skip,
     r.Limit,
+    r.Merge.Stream<T>,
     r.Map.Sequence<T>,
     r.OrderBy.Selection<T>,
     r.Union.Stream<T>,
@@ -1625,7 +1628,7 @@ declare namespace rethinkdb {
     }
 
     namespace Merge {
-      type MergeParam <T> = RSelectionObject<any> | ((item: RObject<T>) => (RObject<any> | { [key: string]: any }));
+      type MergeParam <T> = RSelectionObject<T> | ((item: RObject<T>) => (RObject<T> | T)) | T;
 
       interface Array <T> {
         /**
