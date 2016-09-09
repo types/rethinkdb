@@ -2168,14 +2168,14 @@ declare namespace rethinkdb {
        *
        * https://rethinkdb.com/api/javascript/replace
        */
-      replace (objectOrFunction: T | ((item: RObject<T>) => T), options?: UpdateOptions): RObject<ReplaceResult<T>>;
+      replace (objectOrFunction: T | ((item: RSelectionObject<T>) => T), options?: UpdateOptions): RObject<ReplaceResult<T>>;
 
       /**
        * Update JSON documents in a table. Accepts a JSON document, a ReQL expression, or a combination of the two. You can pass options like `returnChanges` that will return the old and new values of the row you have modified.
        *
        * https://rethinkdb.com/api/javascript/update
        */
-      update (objectOrFunction: T | ((item: RObject<T>) => T), options?: UpdateOptions): RObject<UpdateResult<T>>;
+      update (objectOrFunction: T | ((item: RSelectionObject<T>) => T), options?: UpdateOptions): RObject<UpdateResult<T>>;
     }
 
     interface CoerceTo {
