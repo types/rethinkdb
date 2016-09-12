@@ -363,7 +363,7 @@ declare namespace rethinkdb {
    * RethinkDB uses promises or Node.js-style callbacks.
    */
   export interface Callback <T> {
-    (err: Error | null, res: T): void;
+    (err: Error | void, res: T): void;
   }
 
   /**
