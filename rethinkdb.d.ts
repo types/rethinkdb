@@ -191,6 +191,8 @@ declare namespace rethinkdb {
     // Geometry.
     RGeometry<T> {}
 
+  export interface RNull extends RValue<null> {}
+
   export interface RBoolean <T extends boolean> extends
     RValue<T>,
     r.And, r.Not, r.Or {}
@@ -256,8 +258,12 @@ declare namespace rethinkdb {
   type IndexFunction <T> = RValue<any> | Array<RValue<any>> | ((item: RValue<T> | RObject<T>) => RValue<any>);
   type KeyType = r.StringLike<string> | r.NumberLike<number> | r.TimeLike | r.ArrayLike<r.StringLike<string> | r.NumberLike<number> | r.TimeLike> | RSpecial<'ARGS'>;
 
-  interface IndexOptions {
+  export interface IndexOptions {
     index?: string;
+  }
+
+  export interface IndexRequiredOptions {
+    index: string;
   }
 
   export type Bound = 'closed' | 'open';
@@ -295,8 +301,7 @@ declare namespace rethinkdb {
     fill?: boolean;
   }
 
-  export interface GetNearestOptions extends DistanceOptions {
-    index: string;
+  export interface GetNearestOptions extends IndexRequiredOptions, DistanceOptions {
     /**
      * The maximum number of results to return (default 100).
      */
@@ -358,7 +363,7 @@ declare namespace rethinkdb {
    * RethinkDB uses promises or Node.js-style callbacks.
    */
   export interface Callback <T> {
-    (err: Error | void, res: T): void;
+    (err: Error | null, res: T): void;
   }
 
   /**
@@ -639,7 +644,7 @@ declare namespace rethinkdb {
     changes?: ChangeSet<Old, New>[];
   }
 
-  export interface InsertResult <T> extends WriteResult<void, T> {
+  export interface InsertResult <T> extends WriteResult<null, T> {
     /**
      * A list of generated primary keys for inserted documents whose primary keys were not specified (capped to 100,000).
      */
@@ -654,18 +659,18 @@ declare namespace rethinkdb {
 
   export interface ReplaceResult <T> extends WriteResult<T, T> {}
 
-  export interface DeleteResult <T> extends WriteResult<T, void> {}
+  export interface DeleteResult <T> extends WriteResult<T, null> {}
 
   export interface SyncResult {
     synced: number;
   }
 
-  interface UnionOptions <T> {
+  export interface UnionOptions <T> {
     interleave?: boolean | string | ((row: RObject<T>) => RString<string>);
   }
 
 
-  interface NestedFieldsObject {
+  export interface NestedFieldsObject {
     [key: string]: boolean | NestedFieldsSelector;
   }
 
@@ -683,7 +688,7 @@ declare namespace rethinkdb {
     r.Avg<T>,
     r.Contains<T>,
     r.Count.Sequence<T>,
-    r.Default<T>,
+    r.Default<T | null>,
     r.ForEach<T>,
     r.Group<T>,
     r.IsEmpty,
@@ -708,7 +713,7 @@ declare namespace rethinkdb {
     /**
      * Get all documents between two keys. Accepts three optional arguments: `index`, `left_bound`, and `right_bound`. If `index` is set to the name of a secondary index, `between` will return all documents where that index's value is in the specified range (it uses the primary key by default). `left_bound` or `right_bound` may be set to `open` or `closed` to indicate whether or not to include that endpoint of the range (by default, `left_bound` is closed and `right_bound` is open).
      *
-     * https://rethinkdb.com/api/javascript/between
+     * https://www.rethinkdb.com/api/javascript/between
      */
     between (lowerKey: KeyType, upperKey: KeyType, options?: BetweenOptions): RTableSlice<T>;
   }
@@ -719,14 +724,14 @@ declare namespace rethinkdb {
      *
      * If no document exists with that primary key, `get` will return `null`.
      *
-     * https://rethinkdb.com/api/javascript/get
+     * https://www.rethinkdb.com/api/javascript/get
      */
-    get (key: KeyType): RSelectionObject<T>;
+    get (key: KeyType): RSelectionObject<T | null>;
 
     /**
      * Get all documents where the given value matches the value of the requested index.
      *
-     * https://rethinkdb.com/api/javascript/get_all
+     * https://www.rethinkdb.com/api/javascript/get_all
      */
     getAll (key: KeyType, options?: IndexOptions): RSelection<T>;
     getAll (key: KeyType, ...keys: Array<KeyType>): RSelection<T>;
@@ -735,21 +740,21 @@ declare namespace rethinkdb {
     /**
      * Get all documents where the given geometry object intersects the geometry object of the requested geospatial index.
      *
-     * https://rethinkdb.com/api/javascript/get_intersecting
+     * https://www.rethinkdb.com/api/javascript/get_intersecting
      */
-    getIntersecting (geometry: RGeometry<any>, options?: { index: string }): RStream<T>;
+    getIntersecting (geometry: RGeometry<any>, options?: IndexOptions): RStream<T>;
 
     /**
      * Get all documents where the specified geospatial index is within a certain distance of the specified point (default 100 kilometers).
      *
-     * https://rethinkdb.com/api/javascript/get_nearest
+     * https://www.rethinkdb.com/api/javascript/get_nearest
      */
     getNearest (point: RPoint, options?: GetNearestOptions): RArray<GetNearestResult<T>>;
 
     /**
      * Create a new secondary index on a table.
      *
-     * https://rethinkdb.com/api/javascript/index_create
+     * https://www.rethinkdb.com/api/javascript/index_create
      */
     indexCreate (indexName: r.StringLike<string>, indexFunction: IndexFunction<T>, options?: IndexCreateOptions): RObject<IndexCreateResult>;
     indexCreate (indexName: r.StringLike<string>, options?: IndexCreateOptions): RObject<IndexCreateResult>;
@@ -757,28 +762,28 @@ declare namespace rethinkdb {
     /**
      * Delete a previously created secondary index of this table.
      *
-     * https://rethinkdb.com/api/javascript/index_drop
+     * https://www.rethinkdb.com/api/javascript/index_drop
      */
     indexDrop (indexName: r.StringLike<string>): RObject<any>;
 
     /**
      * List all the secondary indexes of this table.
      *
-     * https://rethinkdb.com/api/javascript/index_list
+     * https://www.rethinkdb.com/api/javascript/index_list
      */
     indexList (): RArray<string>;
 
     /**
      * Rename an existing secondary index on a table. If the optional argument `overwrite` is specified as `true`, a previously existing index with the new name will be deleted and the index will be renamed. If `overwrite` is `false` (the default) an error will be raised if the new index name already exists.
      *
-     * https://rethinkdb.com/api/javascript/index_rename
+     * https://www.rethinkdb.com/api/javascript/index_rename
      */
     indexRename (oldIndexName: r.StringLike<string>, newIndexName: r.StringLike<string>, options?: IndexRenameOptions): RObject<IndexRenameResult>;
 
     /**
      * Get the status of the specified indexes on this table, or the status of all indexes on this table if no indexes are specified.
      *
-     * https://rethinkdb.com/api/javascript/index_status
+     * https://www.rethinkdb.com/api/javascript/index_status
      */
     indexStatus (...indexes: Array<string>): RArray<IndexStatusResult>;
     indexStatus (): RArray<IndexStatusResult>;
@@ -786,7 +791,7 @@ declare namespace rethinkdb {
     /**
      * Wait for the specified indexes on this table to be ready, or for all indexes on this table to be ready if no indexes are specified.
      *
-     * https://rethinkdb.com/api/javascript/index_wait
+     * https://www.rethinkdb.com/api/javascript/index_wait
      */
     indexWait (...indexes: Array<string>): RArray<IndexStatusResult>;
     indexWait (): RArray<IndexStatusResult>;
@@ -794,14 +799,14 @@ declare namespace rethinkdb {
     /**
      * Return the status of a table.
      *
-     * https://rethinkdb.com/api/javascript/status
+     * https://www.rethinkdb.com/api/javascript/status
      */
     status (): RSelectionObject<StatusResult>;
 
     /**
      * `sync` ensures that writes on a given table are written to permanent storage. Queries that specify soft durability (`{durability: 'soft'}`) do not give such guarantees, so `sync` can be used to ensure the state of these queries. A call to `sync` does not return until all previous writes to the table are persisted.
      *
-     * https://rethinkdb.com/api/javascript/sync
+     * https://www.rethinkdb.com/api/javascript/sync
      */
     sync (): RObject<SyncResult>;
   }
@@ -818,14 +823,14 @@ declare namespace rethinkdb {
     /**
      * Compute the distance between a point and another geometry object. At least one of the geometry objects specified must be a point.
      *
-     * https://rethinkdb.com/api/javascript/distance
+     * https://www.rethinkdb.com/api/javascript/distance
      */
     distance (geometry: RGeometry<T>, options?: DistanceOptions): RNumber<number>;
 
     /**
      * Convert a ReQL geometry object to a [GeoJSON](http://geojson.org/) object.
      *
-     * https://rethinkdb.com/api/javascript/to_geojson
+     * https://www.rethinkdb.com/api/javascript/to_geojson
      */
     toGeojson (): RObject<any>;
   }
@@ -834,7 +839,7 @@ declare namespace rethinkdb {
     /**
      * Use `polygon2` to "punch out" a hole in `polygon1`. `polygon2` must be completely contained within `polygon1` and must have no holes itself (it must not be the output of `polygonSub` itself).
      *
-     * https://rethinkdb.com/api/javascript/polygon_sub
+     * https://www.rethinkdb.com/api/javascript/polygon_sub
      */
     polygonSub (polygon2: RPolygon): RPolygon;
   }
@@ -843,7 +848,7 @@ declare namespace rethinkdb {
     /**
      * Convert a Line object into a Polygon object. If the last point does not specify the same coordinates as the first point, `polygon` will close the polygon by connecting them.
      *
-     * https://rethinkdb.com/api/javascript/fill
+     * https://www.rethinkdb.com/api/javascript/fill
      */
     fill (): RPolygon;
   }
@@ -854,7 +859,7 @@ declare namespace rethinkdb {
     /**
      * Takes a grouped stream or grouped data and turns it into an array of objects representing the groups. Any commands chained after `ungroup` will operate on this array, rather than operating on each group individually. This is useful if you want to e.g. order the groups by the value of their reduction.
      *
-     * https://rethinkdb.com/api/javascript/ungroup
+     * https://www.rethinkdb.com/api/javascript/ungroup
      */
     ungroup (): RArray<GroupResult<Group, Reduction>>;
   }
@@ -928,42 +933,42 @@ declare namespace rethinkdb {
     /**
      * Select all documents in a table. This command can be chained with other commands to do further processing on the data.
      *
-     * https://rethinkdb.com/api/javascript/table
+     * https://www.rethinkdb.com/api/javascript/table
      */
     table <T> (name: r.StringLike<string>, options?: TableOptions): RTable<T>;
 
     /**
      * Create a table. A RethinkDB table is a collection of JSON documents.
      *
-     * https://rethinkdb.com/api/javascript/table_create
+     * https://www.rethinkdb.com/api/javascript/table_create
      */
     tableCreate (tableName: r.StringLike<string>, options?: TableCreateOptions): RObject<TableCreateResult>;
 
     /**
      * Drop a table. The table and all its data will be deleted.
      *
-     * https://rethinkdb.com/api/javascript/table_drop
+     * https://www.rethinkdb.com/api/javascript/table_drop
      */
     tableDrop (tableName: r.StringLike<string>): RObject<TableDropResult>;
 
     /**
      * List all table names in a database. The result is a list of strings.
      *
-     * https://rethinkdb.com/api/javascript/table_list
+     * https://www.rethinkdb.com/api/javascript/table_list
      */
     tableList (): RArray<string>;
   }
 
-  interface JoinFunction <U> {
+  export interface JoinFunction <U> {
     (left: RObject<any>, right: RObject<any>): U;
   }
 
-  interface GroupResult <Group, Reduction> {
+  export interface GroupResult <Group, Reduction> {
     group: Group;
     reduction: Array<Reduction>;
   }
 
-  interface JoinResult <Left, Right> {
+  export interface JoinResult <Left, Right> {
     left: Left;
     right: Right;
   }
@@ -1042,90 +1047,90 @@ declare namespace rethinkdb {
     type BinaryLike = (() => Buffer | RBinary) | Buffer | RBinary;
     type DatumLike = NumberLike<number> | StringLike<string> | ObjectLike<any> | ArrayLike<any> | BooleanLike<boolean> | TimeLike | BinaryLike;
 
-    interface Add <T> {
+    export interface Add <T> {
       /**
        * Sum two or more numbers, or concatenate two or more strings or arrays.
        *
-       * https://rethinkdb.com/api/javascript/add
+       * https://www.rethinkdb.com/api/javascript/add
        */
       add (value: T, ...values: T[]): this;
     }
 
-    interface Sub <T> {
+    export interface Sub <T> {
       /**
        * Subtract two numbers.
        *
-       * https://rethinkdb.com/api/javascript/sub
+       * https://www.rethinkdb.com/api/javascript/sub
        */
       sub (number: T, ...numbers: T[]): this;
     }
 
-    interface Ceil {
+    export interface Ceil {
       /**
        * Rounds the given value up, returning the smallest integer value greater than or equal to the given value (the value's ceiling).
        *
-       * https://rethinkdb.com/api/javascript/ceil
+       * https://www.rethinkdb.com/api/javascript/ceil
        */
       ceil (): this;
     }
 
-    interface Div {
+    export interface Div {
       /**
        * Divide two numbers.
        *
-       * https://rethinkdb.com/api/javascript/div
+       * https://www.rethinkdb.com/api/javascript/div
        */
       div (number: r.NumberLike<number>, ...numbers: Array<r.NumberLike<number>>): this;
       div (number: r.NumberLike<number>): this;
     }
 
-    interface Floor {
+    export interface Floor {
       /**
        * Rounds the given value down, returning the largest integer value less than or equal to the given value (the value's floor).
        *
-       * https://rethinkdb.com/api/javascript/floor
+       * https://www.rethinkdb.com/api/javascript/floor
        */
       floor (): this;
     }
 
-    interface Mod {
+    export interface Mod {
       /**
        * Find the remainder when dividing two numbers.
        *
-       * https://rethinkdb.com/api/javascript/mod
+       * https://www.rethinkdb.com/api/javascript/mod
        */
       mod (number: r.NumberLike<number>): this;
     }
 
-    interface Mul {
+    export interface Mul {
       /**
        * Multiply two numbers, or make a periodic array.
        *
-       * https://rethinkdb.com/api/javascript/mul
+       * https://www.rethinkdb.com/api/javascript/mul
        */
       mul (number: r.NumberLike<number>, ...numbers: Array<r.NumberLike<number>>): this;
       mul (number: r.NumberLike<number>): this;
     }
 
-    interface Round {
+    export interface Round {
       /**
        * Rounds the given value to the nearest whole integer.
        *
-       * https://rethinkdb.com/api/javascript/round
+       * https://www.rethinkdb.com/api/javascript/round
        */
       round (): this;
     }
 
-    interface Downcase {
+    export interface Downcase {
       /**
        * Lowercases a string.
        *
-       * https://rethinkdb.com/api/javascript/downcase
+       * https://www.rethinkdb.com/api/javascript/downcase
        */
       downcase (): this;
     }
 
-    interface Match {
+    export interface Match {
       /**
        * Matches against a regular expression. If there is a match, returns an object with the fields:
        *
@@ -1136,385 +1141,385 @@ declare namespace rethinkdb {
        *
        * If no match is found, returns `null`.
        *
-       * https://rethinkdb.com/api/javascript/match
+       * https://www.rethinkdb.com/api/javascript/match
        */
-      match (regexp: string): RObject<{ str: string, start: number, end: number, groups: string[] }>;
+      match (regexp: string): RObject<{ str: string, start: number, end: number, groups: string[] }> | RNull;
     }
 
-    interface Split {
+    export interface Split {
       /**
        * Splits a string into substrings. Splits on whitespace when called with no arguments. When called with a separator, splits on that separator. When called with a separator and a maximum number of splits, splits on that separator at most `max_splits` times. (Can be called with `null` as the separator if you want to split on whitespace while still specifying `max_splits`.)
        *
        * Mimics the behavior of Python's `string.split` in edge cases, except for splitting on the empty string, which instead produces an array of single-character strings.
        *
-       * https://rethinkdb.com/api/javascript/split
+       * https://www.rethinkdb.com/api/javascript/split
        */
       split (separator?: string, max_splits?: number): RArray<string>;
     }
 
-    interface Upcase {
+    export interface Upcase {
       /**
        * Uppercases a string.
        *
-       * https://rethinkdb.com/api/javascript/upcase
+       * https://www.rethinkdb.com/api/javascript/upcase
        */
       upcase (): this;
     }
 
-    interface Append <T> {
+    export interface Append <T> {
       /**
        * Append a value to an array.
        *
-       * https://rethinkdb.com/api/javascript/append
+       * https://www.rethinkdb.com/api/javascript/append
        */
       append (value: T): this;
     }
 
-    interface ChangeAt <T> {
+    export interface ChangeAt <T> {
       /**
        * Change a value in an array at a given index. Returns the modified array.
        *
-       * https://rethinkdb.com/api/javascript/change_at
+       * https://www.rethinkdb.com/api/javascript/change_at
        */
       changeAt (index: r.NumberLike<number>, value: T): RArray<T>;
     }
 
-    interface DeleteAt <T> {
+    export interface DeleteAt <T> {
       /**
        * Remove one or more elements from an array at a given index. Returns the modified array.
        *
-       * https://rethinkdb.com/api/javascript/delete_at
+       * https://www.rethinkdb.com/api/javascript/delete_at
        */
       deleteAt (index: r.NumberLike<number>, endIndex?: r.NumberLike<number>): RArray<T>;
     }
 
-    interface Difference <T> {
+    export interface Difference <T> {
       /**
        * Remove the elements of one array from another array.
        *
-       * https://rethinkdb.com/api/javascript/difference
+       * https://www.rethinkdb.com/api/javascript/difference
        */
       difference (array: r.ArrayLike<T>): RArray<T>;
     }
 
-    interface InsertAt <T> {
+    export interface InsertAt <T> {
       /**
        * Insert a value in to an array at a given index. Returns the modified array.
        *
-       * https://rethinkdb.com/api/javascript/insert_at
+       * https://www.rethinkdb.com/api/javascript/insert_at
        */
       insertAt (index: r.NumberLike<number>, value: T): RArray<T>;
     }
 
     namespace Map {
-      interface Array <T> {
+      export interface Array <T> {
         /**
          * Transform each element of one or more sequences by applying a mapping function to them. If `map` is run with two or more sequences, it will iterate for as many items as there are in the shortest sequence.
          *
-         * https://rethinkdb.com/api/javascript/map
+         * https://www.rethinkdb.com/api/javascript/map
          */
         map <Out> (mappingExpression: RValue<Out> | ((item: RDatum<T>) => Out)): RArray<Out>;
       }
 
-      interface Sequence <T> {
+      export interface Sequence <T> {
         /**
          * Transform each element of one or more sequences by applying a mapping function to them. If `map` is run with two or more sequences, it will iterate for as many items as there are in the shortest sequence.
          *
-         * https://rethinkdb.com/api/javascript/map
+         * https://www.rethinkdb.com/api/javascript/map
          */
         map <Out> (mappingExpression: RValue<Out> | ((item: RDatum<T>) => Out)): RStream<Out>;
       }
     }
 
-    interface Prepend <T> {
+    export interface Prepend <T> {
       /**
        * Prepend a value to an array.
        *
-       * https://rethinkdb.com/api/javascript/prepend
+       * https://www.rethinkdb.com/api/javascript/prepend
        */
       prepend (value: T): RArray<T>;
     }
 
-    interface SetDifference <T> {
+    export interface SetDifference <T> {
       /**
        * Remove the elements of one array from another and return them as a set (an array with distinct values).
        *
-       * https://rethinkdb.com/api/javascript/set_difference
+       * https://www.rethinkdb.com/api/javascript/set_difference
        */
       setDifference (array: r.ArrayLike<T>): RArray<T>;
     }
 
-    interface SetInsert <T> {
+    export interface SetInsert <T> {
       /**
        * Add a value to an array and return it as a set (an array with distinct values).
        *
-       * https://rethinkdb.com/api/javascript/set_insert
+       * https://www.rethinkdb.com/api/javascript/set_insert
        */
       setInsert (value: T): RArray<T>;
     }
 
-    interface SetIntersection <T> {
+    export interface SetIntersection <T> {
       /**
        * Intersect two arrays returning values that occur in both of them as a set (an array with distinct values).
        *
-       * https://rethinkdb.com/api/javascript/set_intersection
+       * https://www.rethinkdb.com/api/javascript/set_intersection
        */
       setIntersection (array: r.ArrayLike<T>): RArray<T>;
     }
 
-    interface SetUnion <T> {
+    export interface SetUnion <T> {
       /**
        * Add a several values to an array and return it as a set (an array with distinct values).
        *
-       * https://rethinkdb.com/api/javascript/set_union
+       * https://www.rethinkdb.com/api/javascript/set_union
        */
       setUnion (array: r.ArrayLike<T>): RArray<T>;
     }
 
-    interface SpliceAt <T> {
+    export interface SpliceAt <T> {
       /**
        * Insert several values in to an array at a given index. Returns the modified array.
        *
-       * https://rethinkdb.com/api/javascript/splice_at
+       * https://www.rethinkdb.com/api/javascript/splice_at
        */
       spliceAt (index: r.NumberLike<number>, array: r.ArrayLike<T>): RArray<T>;
     }
 
-    interface Zip <TOutJoin> {
+    export interface Zip <TOutJoin> {
       /**
        * Used to 'zip' up the result of a join by merging the 'right' fields into 'left' fields of each member of the sequence.
        *
-       * https://rethinkdb.com/api/javascript/zip
+       * https://www.rethinkdb.com/api/javascript/zip
        */
       zip (): TOutJoin;
     }
 
-    interface Date {
+    export interface Date {
       /**
        * Return a new time object only based on the day, month and year (ie. the same day at 00:00).
        *
-       * https://rethinkdb.com/api/javascript/date
+       * https://www.rethinkdb.com/api/javascript/date
        */
       date (): RTime;
     }
 
-    interface Day {
+    export interface Day {
       /**
        * Return the day of a time object as a number between 1 and 31.
        *
-       * https://rethinkdb.com/api/javascript/day
+       * https://www.rethinkdb.com/api/javascript/day
        */
       day (): RNumber<number>;
     }
 
-    interface DayOfWeek {
+    export interface DayOfWeek {
       /**
        * Return the day of week of a time object as a number between 1 and 7 (following ISO 8601 standard). For your convenience, the terms r.monday, r.tuesday etc. are defined and map to the appropriate integer.
        *
-       * https://rethinkdb.com/api/javascript/day_of_week
+       * https://www.rethinkdb.com/api/javascript/day_of_week
        */
       dayOfWeek (): RNumber<number>;
     }
 
-    interface DayOfYear {
+    export interface DayOfYear {
       /**
        * Return the day of the year of a time object as a number between 1 and 366 (following ISO 8601 standard).
        *
-       * https://rethinkdb.com/api/javascript/day_of_year
+       * https://www.rethinkdb.com/api/javascript/day_of_year
        */
       dayOfYear(): RNumber<number>;
     }
 
-    interface During {
+    export interface During {
       /**
        * Return if a time is between two other times (by default, inclusive for the start, exclusive for the end).
        *
-       * https://rethinkdb.com/api/javascript/during
+       * https://www.rethinkdb.com/api/javascript/during
        */
       during (startTime: r.TimeLike, endTime: r.TimeLike, options?: BoundOptions): RBoolean<boolean>;
     }
 
-    interface Hours {
+    export interface Hours {
       /**
        * Return the hour in a time object as a number between 0 and 23.
        *
-       * https://rethinkdb.com/api/javascript/hours
+       * https://www.rethinkdb.com/api/javascript/hours
        */
       hours (): RNumber<number>;
     }
 
-    interface InTimezone {
+    export interface InTimezone {
       /**
        * Return a new time object with a different timezone. While the time stays the same, the results returned by methods such as hours() will change since they take the timezone into account. The timezone argument has to be of the ISO 8601 format.
        *
-       * https://rethinkdb.com/api/javascript/in_timezone
+       * https://www.rethinkdb.com/api/javascript/in_timezone
        */
       inTimezone (timezone: r.StringLike<string>): RTime;
     }
 
-    interface Seconds {
+    export interface Seconds {
       /**
        * Return the seconds in a time object as a number between 0 and 59.999 (double precision).
        *
-       * https://rethinkdb.com/api/javascript/seconds
+       * https://www.rethinkdb.com/api/javascript/seconds
        */
       seconds (): RNumber<number>;
     }
 
-    interface Minutes {
+    export interface Minutes {
       /**
        * Return the minute in a time object as a number between 0 and 59.
        *
-       * https://rethinkdb.com/api/javascript/minutes
+       * https://www.rethinkdb.com/api/javascript/minutes
        */
       minutes (): RNumber<number>;
     }
 
-    interface Month {
+    export interface Month {
       /**
        * Return the month of a time object as a number between 1 and 12. For your convenience, the terms `r.january`, `r.february`, etc. are defined and map to the appropriate integer.
        *
-       * https://rethinkdb.com/api/javascript/month
+       * https://www.rethinkdb.com/api/javascript/month
        */
       month (): RNumber<number>;
     }
 
-    interface Year {
+    export interface Year {
       /**
        * Return the year of a time object.
        *
-       * https://rethinkdb.com/api/javascript/year
+       * https://www.rethinkdb.com/api/javascript/year
        */
       year (): RNumber<number>;
     }
 
-    interface TimeOfDay {
+    export interface TimeOfDay {
       /**
        * Return the number of seconds elapsed since the beginning of the day stored in the time object.
        *
-       * https://rethinkdb.com/api/javascript/time_of_day
+       * https://www.rethinkdb.com/api/javascript/time_of_day
        */
       timeOfDay (): RNumber<number>;
     }
 
-    interface Timezone {
+    export interface Timezone {
       /**
        * Return the timezone of the time object.
        *
-       * https://rethinkdb.com/api/javascript/timezone
+       * https://www.rethinkdb.com/api/javascript/timezone
        */
       timezone (): RString<string>;
     }
 
-    interface ToEpochTime {
+    export interface ToEpochTime {
       /**
        * Convert a time object to its epoch time.
        *
-       * https://rethinkdb.com/api/javascript/to_epoch_time
+       * https://www.rethinkdb.com/api/javascript/to_epoch_time
        */
       toEpochTime (): RNumber<number>;
     }
 
-    interface ToISO8601 {
+    export interface ToISO8601 {
       /**
        * Convert a time object to a string in ISO 8601 format.
        *
-       * https://rethinkdb.com/api/javascript/to_iso8601
+       * https://www.rethinkdb.com/api/javascript/to_iso8601
        */
       toISO8601 (): RString<string>;
     }
 
-    interface And {
+    export interface And {
       /**
        * Compute the logical "and" of one or more values.
        *
-       * https://rethinkdb.com/api/javascript/and
+       * https://www.rethinkdb.com/api/javascript/and
        */
       and (...bools: Array<r.BooleanLike<boolean>>): RBoolean<boolean>;
     }
 
-    interface Not {
+    export interface Not {
       /**
        * Compute the logical inverse (not) of an expression.
        *
        * `not` can be called either via method chaining, immediately after an expression that evaluates as a boolean value, or by passing the expression as a parameter to `not`.
        *
-       * https://rethinkdb.com/api/javascript/not
+       * https://www.rethinkdb.com/api/javascript/not
        */
       not(): RBoolean<boolean>;
     }
 
-    interface Or {
+    export interface Or {
       /**
        * Compute the logical "or" of one or more values.
        *
-       * https://rethinkdb.com/api/javascript/or
+       * https://www.rethinkdb.com/api/javascript/or
        */
       or (...bools: Array<r.BooleanLike<boolean>>): RBoolean<boolean>;
     }
 
     namespace Pluck {
-      interface Array {
+      export interface Array {
         /**
          * Plucks out one or more attributes from either an object or a sequence of objects (projection).
          *
-         * https://rethinkdb.com/api/javascript/pluck
+         * https://www.rethinkdb.com/api/javascript/pluck
          */
         pluck <TPluck> (...selectors: r.StringLike<string>[]): RArray<TPluck>;
       }
 
-      interface Sequence {
+      export interface Sequence {
         /**
          * Plucks out one or more attributes from either an object or a sequence of objects (projection).
          *
-         * https://rethinkdb.com/api/javascript/pluck
+         * https://www.rethinkdb.com/api/javascript/pluck
          */
         pluck <TPluck> (...selectors: r.StringLike<string>[]): RStream<TPluck>;
       }
 
-      interface Object {
+      export interface Object {
         /**
          * Plucks out one or more attributes from either an object or a sequence of objects (projection).
          *
-         * https://rethinkdb.com/api/javascript/pluck
+         * https://www.rethinkdb.com/api/javascript/pluck
          */
         pluck <TPluck> (...selectors: r.StringLike<string>[]): RObject<TPluck>;
       }
     }
 
-    interface BracketsPluckSequence {
+    export interface BracketsPluckSequence {
       /**
        * Get a single field from an object or a single element from a sequence.
        *
-       * https://rethinkdb.com/api/javascript/bracket
+       * https://www.rethinkdb.com/api/javascript/bracket
        */
       <TPluck> (attr: r.StringLike<string>): RArray<TPluck>;
     }
 
     namespace Without {
-      interface Array {
+      export interface Array {
         /**
          * The opposite of pluck; takes an object or a sequence of objects, and returns them with the specified paths removed.
          *
-         * https://rethinkdb.com/api/javascript/without
+         * https://www.rethinkdb.com/api/javascript/without
          */
         without <TWithout> (...selectors: r.StringLike<string>[]): RArray<TWithout>;
       }
 
-      interface Sequence {
+      export interface Sequence {
         /**
          * The opposite of pluck; takes an object or a sequence of objects, and returns them with the specified paths removed.
          *
-         * https://rethinkdb.com/api/javascript/without
+         * https://www.rethinkdb.com/api/javascript/without
          */
         without <TWithout> (...selectors: r.StringLike<string>[]): RStream<TWithout>;
       }
 
-      interface Object {
+      export interface Object {
         /**
          * The opposite of pluck; takes an object or a sequence of objects, and returns them with the specified paths removed.
          *
-         * https://rethinkdb.com/api/javascript/without
+         * https://www.rethinkdb.com/api/javascript/without
          */
         without <TWithout> (...selectors: r.StringLike<string>[]): RObject<TWithout>;
       }
@@ -1523,54 +1528,54 @@ declare namespace rethinkdb {
     namespace ConcatMap {
       type ConcatFunction <TItem, TOut> = (item: RObject<TItem>) => TOut;
 
-      interface Array <T> {
+      export interface Array <T> {
         /**
          * Concatenate one or more elements into a single sequence using a mapping function.
          *
-         * https://rethinkdb.com/api/javascript/concat_map
+         * https://www.rethinkdb.com/api/javascript/concat_map
          */
         concatMap <Out> (concatFunction: ConcatFunction<T, r.ArrayLike<Out>>): RArray<Out>;
       }
 
-      interface Stream <T> {
+      export interface Stream <T> {
         /**
          * Concatenate one or more elements into a single sequence using a mapping function.
          *
-         * https://rethinkdb.com/api/javascript/concat_map
+         * https://www.rethinkdb.com/api/javascript/concat_map
          */
         concatMap <Out> (concatFunction: ConcatFunction<T, r.SequenceLike<Out>>): RStream<Out>;
       }
     }
 
     namespace EqJoin {
-      interface array<T> {
+      export interface array<T> {
         /**
          * Join tables using a field or function on the left-hand sequence matching primary keys or secondary indexes on the right-hand table. `eqJoin` is more efficient than other ReQL join types, and operates much faster. Documents in the result set consist of pairs of left-hand and right-hand documents, matched when the field on the left-hand side exists and is non-null and an entry with that field's value exists in the specified index on the right-hand side.
          *
-         * https://rethinkdb.com/api/javascript/eq_join
+         * https://www.rethinkdb.com/api/javascript/eq_join
          */
         eqJoin <TRight> (leftField: r.StringLike<string>, rightTable: RTable<TRight>, options?: JoinOptions): RArrayJoin<T, TRight>;
         eqJoin <TLeft, TRight> (predicate_function: (item: RObject<T>) => TLeft, rightTable: RTable<TRight>, options?: JoinOptions): RArrayJoin<TLeft, TRight>;
       }
 
-      interface Stream <T> {
+      export interface Stream <T> {
         /**
          * Join tables using a field or function on the left-hand sequence matching primary keys or secondary indexes on the right-hand table. `eqJoin` is more efficient than other ReQL join types, and operates much faster. Documents in the result set consist of pairs of left-hand and right-hand documents, matched when the field on the left-hand side exists and is non-null and an entry with that field's value exists in the specified index on the right-hand side.
          *
-         * https://rethinkdb.com/api/javascript/eq_join
+         * https://www.rethinkdb.com/api/javascript/eq_join
          */
         eqJoin <TRight> (leftField: r.StringLike<string>, rightTable: RTable<TRight>, options?: JoinOptions): RStreamJoin<T, TRight>;
         eqJoin <TLeft, TRight> (predicate_function: (item: RObject<T>) => TLeft, rightTable: RTable<TRight>, options?: JoinOptions): RStreamJoin<TLeft, TRight>;
       }
     }
 
-    interface FilterObject {
+    export interface FilterObject {
       [key: string]: r.DatumLike | FilterObject;
     }
 
     type FilterPredicate <T> = ((item: RDatum<T>) => RBoolean<boolean>) | FilterObject | RBoolean<boolean>;
 
-    interface Filter <T> {
+    export interface Filter <T> {
       /**
        * Get all the documents for which the given predicate is true.
        *
@@ -1578,25 +1583,25 @@ declare namespace rethinkdb {
        *
        * The body of every filter is wrapped in an implicit `.default(false)`, which means that if a non-existence errors is thrown (when you try to access a field that does not exist in a document), RethinkDB will just ignore the document. The `default` value can be changed by passing an object with a `default` field. Setting this optional argument to `r.error()` will cause any non-existence errors to return a `ReqlRuntimeError`.
        *
-       * https://rethinkdb.com/api/javascript/filter
+       * https://www.rethinkdb.com/api/javascript/filter
        */
       filter (predicate: FilterPredicate<T>, options?: { default: boolean | RSpecial<'ERROR'> }): this;
     }
 
-    interface Distinct <TOut> {
+    export interface Distinct <TOut> {
       /**
        * Remove duplicate elements from the sequence.
        *
-       * https://rethinkdb.com/api/javascript/distinct
+       * https://www.rethinkdb.com/api/javascript/distinct
        */
       distinct (options?: IndexOptions): TOut;
     }
 
-    interface HasFields <TOut> {
+    export interface HasFields <TOut> {
       /**
        * Test if an object has one or more fields. An object has a field if it has that key and the key has a non-null value. For instance, the object `{'a': 1,'b': 2,'c': null}` has the fields `a` and `b`.
        *
-       * https://rethinkdb.com/api/javascript/has_fields
+       * https://www.rethinkdb.com/api/javascript/has_fields
        */
       hasFields (...selectors: NestedFieldsSelector[]): TOut;
     }
@@ -1604,30 +1609,30 @@ declare namespace rethinkdb {
     type JoinPredicate <TLeft, TRight> = (left: RObject<TLeft>, right: RObject<TRight>) => RBoolean<boolean>;
 
     namespace InnerJoin {
-      interface Array <T> {
+      export interface Array <T> {
         /**
          * Returns an inner join of two sequences.
          *
-         * https://rethinkdb.com/api/javascript/inner_join
+         * https://www.rethinkdb.com/api/javascript/inner_join
          */
         innerJoin <TRight> (otherSequence: r.SequenceLike<TRight>, predicate_function: JoinPredicate<T, TRight>): RArrayJoin<T, TRight>;
       }
 
-      interface Stream <T> {
+      export interface Stream <T> {
         /**
          * Returns an inner join of two sequences.
          *
-         * https://rethinkdb.com/api/javascript/inner_join
+         * https://www.rethinkdb.com/api/javascript/inner_join
          */
         innerJoin <TRight> (otherSequence: r.SequenceLike<TRight>, predicate_function: JoinPredicate<T, TRight>): RStreamJoin<T, TRight>;
       }
     }
 
-    interface Limit {
+    export interface Limit {
       /**
        * End the sequence after the given number of elements.
        *
-       * https://rethinkdb.com/api/javascript/limit
+       * https://www.rethinkdb.com/api/javascript/limit
        */
       limit (n: r.NumberLike<number>): this;
     }
@@ -1635,42 +1640,42 @@ declare namespace rethinkdb {
     namespace Merge {
       type MergeParam <T> = RSelectionObject<T> | ((item: RObject<T>) => (RObject<T> | T)) | T;
 
-      interface Array <T> {
+      export interface Array <T> {
         /**
          * Merge two or more objects together to construct a new object with properties from all. When there is a conflict between field names, preference is given to fields in the rightmost object in the argument list.
          *
-         * https://rethinkdb.com/api/javascript/merge
+         * https://www.rethinkdb.com/api/javascript/merge
          */
         merge <TOut> (...objectsOrFunctions: MergeParam<T>[]): RArray<TOut>;
       }
 
-      interface Stream <T> {
+      export interface Stream <T> {
         /**
          * Merge two or more objects together to construct a new object with properties from all. When there is a conflict between field names, preference is given to fields in the rightmost object in the argument list.
          *
-         * https://rethinkdb.com/api/javascript/merge
+         * https://www.rethinkdb.com/api/javascript/merge
          */
         merge <TOut> (...objectOrFunctions: MergeParam<T>[]): RStream<TOut>;
       }
 
-      interface Object <T> {
+      export interface Object <T> {
         /**
          * Merge two or more objects together to construct a new object with properties from all. When there is a conflict between field names, preference is given to fields in the rightmost object in the argument list.
          *
-         * https://rethinkdb.com/api/javascript/merge
+         * https://www.rethinkdb.com/api/javascript/merge
          */
         merge <TOut> (...objectOrFunctions: MergeParam<T>[]): RObject<TOut>;
       }
     }
 
     namespace OrderBy {
-      interface Table <T> {
+      export interface Table <T> {
         /**
          * Sort the sequence by document values of the given key(s). To specify the ordering, wrap the attribute with either `r.asc` or `r.desc` (defaults to ascending).
          *
          * Sorting without an index requires the server to hold the sequence in memory, and is limited to 100,000 documents (or the setting of the `arrayLimit` option for [run](/api/javascript/run)). Sorting with an index can be done on arbitrarily large tables, or after a `between` command using the same index.
          *
-         * https://rethinkdb.com/api/javascript/order_by
+         * https://www.rethinkdb.com/api/javascript/order_by
          */
         orderBy (keysOrFunctions: OrderByPredicate<T>, ...moreKeysFunctionsOrOptions: (OrderByPredicate<T> | OrderByOptions)[]): RTableSlice<T>;
         orderBy (options: OrderByOptions): RTableSlice<T>;
@@ -1682,7 +1687,7 @@ declare namespace rethinkdb {
          *
          * Sorting without an index requires the server to hold the sequence in memory, and is limited to 100,000 documents (or the setting of the `arrayLimit` option for [run](/api/javascript/run)). Sorting with an index can be done on arbitrarily large tables, or after a `between` command using the same index.
          *
-         * https://rethinkdb.com/api/javascript/order_by
+         * https://www.rethinkdb.com/api/javascript/order_by
          */
         orderBy (keyOrFunction: OrderByPredicate<T>, ...moreKeysOrFunctions: OrderByPredicate<T>[]): RSelection<T>;
       }
@@ -1693,76 +1698,76 @@ declare namespace rethinkdb {
          *
          * Sorting without an index requires the server to hold the sequence in memory, and is limited to 100,000 documents (or the setting of the `arrayLimit` option for [run](/api/javascript/run)). Sorting with an index can be done on arbitrarily large tables, or after a `between` command using the same index.
          *
-         * https://rethinkdb.com/api/javascript/order_by
+         * https://www.rethinkdb.com/api/javascript/order_by
          */
         orderBy (keyOrFunction: OrderByPredicate<T>, ...moreKeysOrFunctions: OrderByPredicate<T>[]): RArray<T>;
       }
     }
 
     namespace OuterJoin {
-      interface Array<T> {
+      export interface Array<T> {
         /**
          * Returns a left outer join of two sequences.
          *
-         * https://rethinkdb.com/api/javascript/outer_join
+         * https://www.rethinkdb.com/api/javascript/outer_join
          */
         outerJoin <Right> (otherSequence: r.SequenceLike<Right>, predicateFunction: JoinPredicate<T, Right>): RArrayJoin<T, Right>;
       }
 
-      interface Sequence<T> {
+      export interface Sequence<T> {
         /**
          * Returns a left outer join of two sequences.
          *
-         * https://rethinkdb.com/api/javascript/outer_join
+         * https://www.rethinkdb.com/api/javascript/outer_join
          */
         outerJoin <Right> (otherSequence: r.SequenceLike<Right>, predicateFunction: JoinPredicate<T, Right>): RStreamJoin<T, Right>;
       }
     }
 
-    interface Sample <TOut> {
+    export interface Sample <TOut> {
       /**
        * Select a given number of elements from a sequence with uniform random distribution. Selection is done without replacement.
        *
-       * https://rethinkdb.com/api/javascript/sample
+       * https://www.rethinkdb.com/api/javascript/sample
        */
       sample (number: r.NumberLike<number>): TOut;
     }
 
-    interface Skip {
+    export interface Skip {
       /**
        * Skip a number of elements from the head of the sequence.
        *
-       * https://rethinkdb.com/api/javascript/skip
+       * https://www.rethinkdb.com/api/javascript/skip
        */
       skip (n: r.NumberLike<number>): this;
     }
 
-    interface Slice {
+    export interface Slice {
       /**
        * Return the elements of a sequence within the specified range.
        *
-       * https://rethinkdb.com/api/javascript/slice
+       * https://www.rethinkdb.com/api/javascript/slice
        */
       slice (startOffset: r.NumberLike<number>, endOffset: r.NumberLike<number>, options?: BoundOptions): this;
       slice (startOffset: r.NumberLike<number>): this;
     }
 
     namespace Union {
-      interface Stream <T> {
+      export interface Stream <T> {
         /**
          * Merge two or more sequences.
          *
-         * https://rethinkdb.com/api/javascript/union
+         * https://www.rethinkdb.com/api/javascript/union
          */
         union <Other> (sequence: r.SequenceLike<Other>, ...sequencesOrOptions: (r.SequenceLike<Other> | UnionOptions<T>)[]): RStream<T | Other>;
         union <Other> (sequence: r.SequenceLike<Other>, options?: UnionOptions<T>): RStream<T | Other>;
       }
 
-      interface Array <T> {
+      export interface Array <T> {
         /**
          * Merge two or more sequences.
          *
-         * https://rethinkdb.com/api/javascript/union
+         * https://www.rethinkdb.com/api/javascript/union
          */
         union <Other> (sequence: r.SequenceLike<Other>, ...sequencesOrOptions: (r.SequenceLike<Other> | UnionOptions<T>)[]): RArray<T | Other>;
         union <Other> (sequence: r.SequenceLike<Other>, options?: UnionOptions<T>): RArray<T | Other>;
@@ -1770,42 +1775,42 @@ declare namespace rethinkdb {
     }
 
     namespace WithFields {
-      interface Array {
+      export interface Array {
         /**
          * Plucks one or more attributes from a sequence of objects, filtering out any objects in the sequence that do not have the specified fields. Functionally, this is identical to `hasFields` followed by `pluck` on a sequence.
          *
-         * https://rethinkdb.com/api/javascript/with_fields
+         * https://www.rethinkdb.com/api/javascript/with_fields
          */
         withFields <T> (...selectors: NestedFieldsSelector[]): RArray<T>;
       }
 
-      interface Stream {
+      export interface Stream {
         /**
          * Plucks one or more attributes from a sequence of objects, filtering out any objects in the sequence that do not have the specified fields. Functionally, this is identical to `hasFields` followed by `pluck` on a sequence.
          *
-         * https://rethinkdb.com/api/javascript/with_fields
+         * https://www.rethinkdb.com/api/javascript/with_fields
          */
         withFields <T> (...selectors: NestedFieldsSelector[]): r.SequenceLike<T>;
       }
     }
 
     namespace Distinct {
-      interface Sequence <T> {
+      export interface Sequence <T> {
         /**
          * Remove duplicate elements from the sequence.
          *
-         * https://rethinkdb.com/api/javascript/distinct
+         * https://www.rethinkdb.com/api/javascript/distinct
          */
         distinct (): RArray<T>;
       }
 
-      interface Table <T> {
+      export interface Table <T> {
         /**
          * Remove duplicate elements from the sequence.
          *
-         * https://rethinkdb.com/api/javascript/distinct
+         * https://www.rethinkdb.com/api/javascript/distinct
          */
-        distinct (options?: { index: string }): RStream<T>;
+        distinct (options?: IndexOptions): RStream<T>;
       }
     }
 
@@ -1814,7 +1819,7 @@ declare namespace rethinkdb {
         /**
          * Get a single field from an object or a single element from a sequence.
          *
-         * https://rethinkdb.com/api/javascript/bracket
+         * https://www.rethinkdb.com/api/javascript/bracket
          */
         <T> (attr: r.StringLike<string>): RDatum<T>;
       }
@@ -1823,7 +1828,7 @@ declare namespace rethinkdb {
         /**
          * Get a single field from an object or a single element from a sequence.
          *
-         * https://rethinkdb.com/api/javascript/bracket
+         * https://www.rethinkdb.com/api/javascript/bracket
          */
         <T> (attr: r.StringLike<string>): RStream<T>;
       }
@@ -1832,7 +1837,7 @@ declare namespace rethinkdb {
         /**
          * Get a single field from an object or a single element from a sequence.
          *
-         * https://rethinkdb.com/api/javascript/bracket
+         * https://www.rethinkdb.com/api/javascript/bracket
          */
         <Out> (attr: r.StringLike<string>): RArray<Out>;
         (index: r.NumberLike<number>): RDatum<In>;
@@ -1842,7 +1847,7 @@ declare namespace rethinkdb {
         /**
          * Get a single field from an object or a single element from a sequence.
          *
-         * https://rethinkdb.com/api/javascript/bracket
+         * https://www.rethinkdb.com/api/javascript/bracket
          */
         <T> (attr: r.StringLike<string>): RDatum<T>;
         (index: r.NumberLike<number>): RDatum<T>;
@@ -1854,167 +1859,169 @@ declare namespace rethinkdb {
         /**
          * Get a single field from an object. If called on a sequence, gets that field from every object in the sequence, skipping objects that lack it.
          *
-         * https://rethinkdb.com/api/javascript/get_field
+         * https://www.rethinkdb.com/api/javascript/get_field
          */
         getField <T> (attr: r.StringLike<string>): RDatum<T>;
       }
 
-      interface Array <T> {
+      export interface Array <T> {
         /**
          * Get a single field from an object. If called on a sequence, gets that field from every object in the sequence, skipping objects that lack it.
          *
-         * https://rethinkdb.com/api/javascript/get_field
+         * https://www.rethinkdb.com/api/javascript/get_field
          */
         getField <T> (attr: r.StringLike<string>): RArray<T>;
       }
 
-      interface Stream {
+      export interface Stream {
         /**
          * Get a single field from an object. If called on a sequence, gets that field from every object in the sequence, skipping objects that lack it.
          *
-         * https://rethinkdb.com/api/javascript/get_field
+         * https://www.rethinkdb.com/api/javascript/get_field
          */
         getField: Bracket.Stream;
       }
     }
 
     namespace Includes {
-      interface Sequence {
+      export interface Sequence {
         /**
-         * Tests whether a geometry object is completely contained within another. When applied to a sequence of geometry objects, `includes` acts as a [filter](https://rethinkdb.com/api/javascript/filter), returning a sequence of objects from the sequence that include the argument.
+         * Tests whether a geometry object is completely contained within another. When applied to a sequence of geometry objects, `includes` acts as a [filter](https://www.rethinkdb.com/api/javascript/filter), returning a sequence of objects from the sequence that include the argument.
          *
-         * https://rethinkdb.com/api/javascript/includes
+         * https://www.rethinkdb.com/api/javascript/includes
          */
         includes (geometry: RGeometry<any>): this;
       }
 
-      interface Geometry {
+      export interface Geometry {
         /**
-         * Tests whether a geometry object is completely contained within another. When applied to a sequence of geometry objects, `includes` acts as a [filter](https://rethinkdb.com/api/javascript/filter), returning a sequence of objects from the sequence that include the argument.
+         * Tests whether a geometry object is completely contained within another. When applied to a sequence of geometry objects, `includes` acts as a [filter](https://www.rethinkdb.com/api/javascript/filter), returning a sequence of objects from the sequence that include the argument.
          *
-         * https://rethinkdb.com/api/javascript/includes
+         * https://www.rethinkdb.com/api/javascript/includes
          */
         includes (geometry: RGeometry<any>): RBoolean<boolean>;
       }
     }
 
     namespace Intersects {
-      interface Sequence {
+      export interface Sequence {
         /**
-         * Tests whether two geometry objects intersect with one another. When applied to a sequence of geometry objects, `intersects` acts as a [filter](https://rethinkdb.com/api/javascript/filter), returning a sequence of objects from the sequence that intersect with the argument.
+         * Tests whether two geometry objects intersect with one another. When applied to a sequence of geometry objects, `intersects` acts as a [filter](https://www.rethinkdb.com/api/javascript/filter), returning a sequence of objects from the sequence that intersect with the argument.
          *
-         * https://rethinkdb.com/api/javascript/intersects
+         * https://www.rethinkdb.com/api/javascript/intersects
          */
         intersects (geometry: RGeometry<any>): this;
       }
 
-      interface Geometry {
+      export interface Geometry {
         /**
-         * Tests whether two geometry objects intersect with one another. When applied to a sequence of geometry objects, `intersects` acts as a [filter](https://rethinkdb.com/api/javascript/filter), returning a sequence of objects from the sequence that intersect with the argument.
+         * Tests whether two geometry objects intersect with one another. When applied to a sequence of geometry objects, `intersects` acts as a [filter](https://www.rethinkdb.com/api/javascript/filter), returning a sequence of objects from the sequence that intersect with the argument.
          *
-         * https://rethinkdb.com/api/javascript/intersects
+         * https://www.rethinkdb.com/api/javascript/intersects
          */
         intersects (geometry: RGeometry<any>): RBoolean<boolean>;
       }
     }
 
-    interface Avg <T> {
+    export interface Avg <T> {
       /**
        * Averages all the elements of a sequence. If called with a field name, averages all the values of that field in the sequence, skipping elements of the sequence that lack that field. If called with a function, calls that function on every element of the sequence and averages the results, skipping elements of the sequence where that function returns `null` or a non-existence error.
        *
-       * https://rethinkdb.com/api/javascript/avg
+       * https://www.rethinkdb.com/api/javascript/avg
        */
       avg (): RNumber<number>;
       avg (field: r.StringLike<string>): RNumber<number>;
       avg (func: (item: RObject<T>) => RNumber<number>): RNumber<number>;
     }
 
-    interface Contains <T> {
+    export interface Contains <T> {
       /**
        * Returns whether or not a sequence contains all the specified values, or if functions are provided instead, returns whether or not a sequence contains values matching all the specified functions.
        *
-       * https://rethinkdb.com/api/javascript/contains
+       * https://www.rethinkdb.com/api/javascript/contains
        */
       contains (...valuesOrFunctions: Array<FilterPredicate<T> | RValue<any> | string>): RBoolean<boolean>;
     }
 
     namespace Count {
-      interface Sequence <T> {
+      export interface Sequence <T> {
         /**
          * Count the number of elements in the sequence. With a single argument, count the number of elements equal to it. If the argument is a function, it is equivalent to calling filter before count.
          *
-         * https://rethinkdb.com/api/javascript/count
+         * https://www.rethinkdb.com/api/javascript/count
          */
         count (predicateFunction: FilterPredicate<T>): RNumber<number>;
         count (equalTo: T): RNumber<number>;
         count (): RNumber<number>;
       }
 
-      interface Datum {
+      export interface Datum {
         /**
          * Count the number of elements in the sequence. With a single argument, count the number of elements equal to it. If the argument is a function, it is equivalent to calling filter before count.
          *
-         * https://rethinkdb.com/api/javascript/count
+         * https://www.rethinkdb.com/api/javascript/count
          */
         count (): RNumber<number>;
       }
     }
 
-    interface Default <T> {
+    export interface Default <T> {
       /**
        * Provide a default value in case of non-existence errors. The `default` command evaluates its first argument (the value it's chained to). If that argument returns `null` or a non-existence error is thrown in evaluation, then `default` returns its second argument. The second argument is usually a default value, but it can be a function that returns a value.
        *
-       * https://rethinkdb.com/api/javascript/default
+       * https://www.rethinkdb.com/api/javascript/default
        */
       default (defaultValue: T | RValue<T>): this;
       default (onError: (error: RString<string>) => RSpecial<'ERROR'> | T | RValue<T>): this;
     }
 
-    interface Keys {
+    export interface Keys {
       /**
-       * Return an array containing all of an object's keys. Note that the keys will be sorted as described in [ReQL data types](https://rethinkdb.com/docs/data-types/#sorting-order) (for strings, lexicographically).
+       * Return an array containing all of an object's keys. Note that the keys will be sorted as described in [ReQL data types](https://www.rethinkdb.com/docs/data-types/#sorting-order) (for strings, lexicographically).
        *
-       * https://rethinkdb.com/api/javascript/keys
+       * https://www.rethinkdb.com/api/javascript/keys
        */
       keys (): RArray<string>;
     }
 
-    interface Values <T> {
+    export interface Values <T> {
       /**
-       * Return an array containing all of an object's values. `values()` guarantees the values will come out in the same order as [keys](https://rethinkdb.com/api/javascript/keys).
+       * Return an array containing all of an object's values. `values()` guarantees the values will come out in the same order as [keys](https://www.rethinkdb.com/api/javascript/keys).
        *
-       * https://rethinkdb.com/api/javascript/values
+       * https://www.rethinkdb.com/api/javascript/values
        */
       values (): RArray<T>;
     }
 
-    interface ForEach <T> {
+    export interface ForEach <T> {
       /**
        * Loop over a sequence, evaluating the given write query for each element.
        *
-       * https://rethinkdb.com/api/javascript/for_each
+       * https://www.rethinkdb.com/api/javascript/for_each
        */
-      forEach <T, U> (writeFunction: (item: RValue<T> | RObject<T>) => RObject<WriteResult<T, U>>): RObject<WriteResult<T, U>>;
+      forEach <T, U> (writeFunction: (item: RDatum<T>) => RObject<WriteResult<T, U>>): RObject<WriteResult<T, U>>;
     }
 
     type OrderByPredicate <T> = KeyType | RSpecial<'ORDER_BY'> | ((item: RObject<T>) => RValue<any> | KeyType)
 
-    interface OrderByOptions {
+    export interface OrderByOptions {
       index: r.StringLike<string> | RSpecial<'ORDER_BY'>
     }
 
-    export interface GroupOptions {
-      index: string;
+    export type MinPredicate <T> = r.StringLike<string> | ((row: RObject<T>) => r.DatumLike) | IndexRequiredOptions;
+    export type MaxPredicate <T> = r.StringLike<string> | ((row: RObject<T>) => r.DatumLike) | IndexRequiredOptions;
+
+    export interface GroupOptions extends IndexOptions {
       multi?: boolean;
     }
 
     export type GroupPredicate <T, Group> = r.StringLike<string> | ((row: RObject<T>) => RValue<Group>);
 
-    interface Group <T> {
+    export interface Group <T> {
       /**
        * Takes a stream and partitions it into multiple groups based on the fields or functions provided. Commands chained after `group` will be called on each of these grouped sub-streams, producing grouped data.
        *
-       * https://rethinkdb.com/api/javascript/group
+       * https://www.rethinkdb.com/api/javascript/group
        */
       group <Group> (field: GroupPredicate<T, Group>, options?: GroupOptions): RGroupedStream<Group, T>;
       group <Group> (field: GroupPredicate<T, Group>, field2: GroupPredicate<T, Group>, options?: GroupOptions): RGroupedStream<Group, T>;
@@ -2023,60 +2030,58 @@ declare namespace rethinkdb {
       group <Group> (...fieldOrFunction: (GroupPredicate<T, Group> | GroupOptions)[]): RGroupedStream<Group, T>;
     }
 
-    interface IsEmpty {
+    export interface IsEmpty {
       /**
        * Test if a sequence is empty.
        *
-       * https://rethinkdb.com/api/javascript/is_empty
+       * https://www.rethinkdb.com/api/javascript/is_empty
        */
       isEmpty (): RBoolean<boolean>;
     }
 
-    interface Max <T> {
+    export interface Max <T> {
       /**
        * Finds the maximum element of a sequence.
        *
-       * https://rethinkdb.com/api/javascript/max
+       * https://www.rethinkdb.com/api/javascript/max
        */
-      max (fieldOrFunction: r.StringLike<string> | ((row: RObject<T>) => RNumber<number>)): RValue<T>;
-      max (options?: { index: string }): RValue<T>;
+      max (option: MaxPredicate<T>): RDatum<T>;
     }
 
-    interface Min<T> {
+    export interface Min <T> {
       /**
        * Finds the minimum element of a sequence.
        *
-       * https://rethinkdb.com/api/javascript/min
+       * https://www.rethinkdb.com/api/javascript/min
        */
-      max (fieldOrFunction: r.StringLike<string> | ((row: RObject<T>) => RNumber<number>)): RValue<T>;
-      max (options?: { index: string }): RValue<T>;
+      min (option: MinPredicate<T>): RValue<T>;
     }
 
     namespace Nth {
-      interface Sequence <T> {
+      export interface Sequence <T> {
         /**
          * Get the _nth_ element of a sequence, counting from zero. If the argument is negative, count from the last element.
          *
-         * https://rethinkdb.com/api/javascript/nth
+         * https://www.rethinkdb.com/api/javascript/nth
          */
         nth (index: r.NumberLike<number>): RObject<T>;
       }
 
-      interface Selection <T> {
+      export interface Selection <T> {
         /**
          * Get the _nth_ element of a sequence, counting from zero. If the argument is negative, count from the last element.
          *
-         * https://rethinkdb.com/api/javascript/nth
+         * https://www.rethinkdb.com/api/javascript/nth
          */
         nth (index: r.NumberLike<number>): RSelectionObject<T>;
       }
     }
 
-    interface OffsetsOf <T> {
+    export interface OffsetsOf <T> {
       /**
        * Get the indexes of an element in a sequence. If the argument is a predicate, get the indexes of all elements matching it.
        *
-       * https://rethinkdb.com/api/javascript/offsets_of
+       * https://www.rethinkdb.com/api/javascript/offsets_of
        */
       offsetsOf (predicateFunction: (item: RDatum<T>) => RBoolean<boolean>): RArray<number>;
       offsetsOf (datum: r.DatumLike): RArray<number>;
@@ -2084,11 +2089,11 @@ declare namespace rethinkdb {
 
     type ReductionFunction <In, Out> = (left: RDatum<In>, right: RDatum<In>) => Out;
 
-    interface Reduce <T> {
+    export interface Reduce <T> {
       /**
        * Produce a single value from a sequence through repeated application of a reduction function.
        *
-       * https://rethinkdb.com/api/javascript/reduce
+       * https://www.rethinkdb.com/api/javascript/reduce
        */
       reduce <TOut extends number> (reduceFunction: ReductionFunction<T, TOut>): RNumber<TOut>;
       reduce <TOut extends string> (reduceFunction: ReductionFunction<T, TOut>): RString<TOut>;
@@ -2097,55 +2102,55 @@ declare namespace rethinkdb {
       reduce <TOut> (reduceFunction: ReductionFunction<T, TOut>): RValue<TOut>;
     }
 
-    interface Sum <T> {
+    export interface Sum <T> {
       /**
        * Sums all the elements of a sequence. If called with a field name, sums all the values of that field in the sequence, skipping elements of the sequence that lack that field. If called with a function, calls that function on every element of the sequence and sums the results, skipping elements of the sequence where that function returns `null` or a non-existence error.
        *
-       * https://rethinkdb.com/api/javascript/sum
+       * https://www.rethinkdb.com/api/javascript/sum
        */
-      sum (fieldOrFunction?: r.StringLike<string> | ((item: RObject<T>) => RNumber<number>)): RNumber<number>;
+      sum (fieldOrFunction?: r.StringLike<string> | ((item: RObject<T>) => RNumber<number> | RNull)): RNumber<number>;
     }
 
-    interface Operators <T> {
+    export interface Operators <T> {
       /**
        * Test if two or more values are equal.
        *
-       * https://rethinkdb.com/api/javascript/eq
+       * https://www.rethinkdb.com/api/javascript/eq
        */
       eq (value: any, ...values: Array<any>): RBoolean<boolean>;
 
       /**
        * Compare values, testing if the left-hand value is greater than or equal to the right-hand.
        *
-       * https://rethinkdb.com/api/javascript/ge
+       * https://www.rethinkdb.com/api/javascript/ge
        */
       ge (value: any, ...values: Array<any>): RBoolean<boolean>;
 
       /**
        * Compare values, testing if the left-hand value is greater than the right-hand.
        *
-       * https://rethinkdb.com/api/javascript/gt
+       * https://www.rethinkdb.com/api/javascript/gt
        */
       gt (value: any, ...values: Array<any>): RBoolean<boolean>;
 
       /**
        * Compare values, testing if the left-hand value is less than or equal to the right-hand.
        *
-       * https://rethinkdb.com/api/javascript/le
+       * https://www.rethinkdb.com/api/javascript/le
        */
       le (value: any, ...values: Array<any>): RBoolean<boolean>;
 
       /**
        * Compare values, testing if the left-hand value is less than the right-hand.
        *
-       * https://rethinkdb.com/api/javascript/lt
+       * https://www.rethinkdb.com/api/javascript/lt
        */
       lt (value: any, ...values: Array<any>): RBoolean<boolean>;
 
       /**
        * Test if two or more values are not equal.
        *
-       * https://rethinkdb.com/api/javascript/ne
+       * https://www.rethinkdb.com/api/javascript/ne
        */
       ne (value: any, ...values: Array<any>): RBoolean<boolean>;
     }
@@ -2154,7 +2159,7 @@ declare namespace rethinkdb {
       /**
        * Return a changefeed, an infinite stream of objects representing changes to a query. A changefeed may return changes to a table or an individual document (a "point" changefeed), and document transformation commands such as `filter` or `map` may be used before the `changes` command to affect the output.
        *
-       * https://rethinkdb.com/api/javascript/changes
+       * https://www.rethinkdb.com/api/javascript/changes
        */
       changes (options?: StreamOptions): RStream<ChangeFeed<T> | ChangeState>;
     }
@@ -2163,14 +2168,14 @@ declare namespace rethinkdb {
       /**
        * Delete one or more documents from a table.
        *
-       * https://rethinkdb.com/api/javascript/delete
+       * https://www.rethinkdb.com/api/javascript/delete
        */
       delete (options?: WriteOptions): RObject<DeleteResult<T>>;
 
       /**
        * Insert JSON documents into a table. Accepts a single JSON document or an array of documents.
        *
-       * https://rethinkdb.com/api/javascript/insert
+       * https://www.rethinkdb.com/api/javascript/insert
        */
       insert (object: T, options?: InsertOptions<T>): RObject<InsertResult<T>>;
       insert (...objectsOrOptions: Array<T | InsertOptions<T>>): RObject<InsertResult<T>>;
@@ -2178,44 +2183,44 @@ declare namespace rethinkdb {
       /**
        * Replace documents in a table. Accepts a JSON document or a ReQL expression, and replaces the original document with the new one. The new document must have the same primary key as the original document.
        *
-       * https://rethinkdb.com/api/javascript/replace
+       * https://www.rethinkdb.com/api/javascript/replace
        */
       replace (objectOrFunction: T | ((item: RSelectionObject<T>) => T), options?: UpdateOptions): RObject<ReplaceResult<T>>;
 
       /**
        * Update JSON documents in a table. Accepts a JSON document, a ReQL expression, or a combination of the two. You can pass options like `returnChanges` that will return the old and new values of the row you have modified.
        *
-       * https://rethinkdb.com/api/javascript/update
+       * https://www.rethinkdb.com/api/javascript/update
        */
       update (objectOrFunction: T | ((item: RSelectionObject<T>) => T), options?: UpdateOptions): RObject<UpdateResult<T>>;
     }
 
-    interface CoerceTo {
+    export interface CoerceTo {
       /**
        * Convert a value of one type into another.
        *
-       * https://rethinkdb.com/api/javascript/coerce_to
+       * https://www.rethinkdb.com/api/javascript/coerce_to
        */
-      coerceTo <T extends string> (type: 'string'): RString<T>;
-      coerceTo <T extends number> (type: 'number'): RNumber<T>;
+      coerceTo (type: 'string'): RString<string>;
+      coerceTo (type: 'number'): RNumber<number>;
       coerceTo <T> (type: 'array'): RArray<T>;
       coerceTo <T> (type: 'object'): RObject<T>;
       coerceTo (type: 'binary'): RBinary;
-      coerceTo (type: string): RValue<any>;
+      coerceTo (type: string): RDatum<any>;
     }
 
     export interface ToJSON {
       /**
        * Convert a ReQL value or object to a JSON string. You may use either `toJsonString` or `toJSON`.
        *
-       * https://rethinkdb.com/api/javascript/to_json_string
+       * https://www.rethinkdb.com/api/javascript/to_json_string
        */
       toJsonString (): RString<string>;
 
       /**
        * Convert a ReQL value or object to a JSON string. You may use either `toJsonString` or `toJSON`.
        *
-       * https://rethinkdb.com/api/javascript/to_json_string
+       * https://www.rethinkdb.com/api/javascript/to_json_string
        */
       toJSON (): RString<string>;
     }
@@ -2224,28 +2229,28 @@ declare namespace rethinkdb {
       /**
        * Query (read and/or update) the configurations for individual tables or databases.
        *
-       * https://rethinkdb.com/api/javascript/config
+       * https://www.rethinkdb.com/api/javascript/config
        */
       config (): RSelectionObject<Config>;
 
       /**
        * Rebalances the shards of a table. When called on a database, all the tables in that database will be rebalanced.
        *
-       * https://rethinkdb.com/api/javascript/rebalance
+       * https://www.rethinkdb.com/api/javascript/rebalance
        */
       rebalance (): RObject<RebalanceResult>;
 
       /**
        * Reconfigure a table's sharding and replication.
        *
-       * https://rethinkdb.com/api/javascript/reconfigure
+       * https://www.rethinkdb.com/api/javascript/reconfigure
        */
       reconfigure (options: ReconfigureOptions): RObject<ReconfigureResult>;
 
       /**
        * Wait for a table or all the tables in a database to be ready. A table may be temporarily unavailable after creation, rebalancing or reconfiguring. The `wait` command blocks until the given table (or database) is fully up to date.
        *
-       * https://rethinkdb.com/api/javascript/wait
+       * https://www.rethinkdb.com/api/javascript/wait
        */
       wait (options?: WaitOptions): RObject<WaitResult>;
     }
@@ -2254,7 +2259,7 @@ declare namespace rethinkdb {
       /**
        * Call an anonymous function using return values from other ReQL commands or queries as arguments.
        *
-       * https://rethinkdb.com/api/javascript/do
+       * https://www.rethinkdb.com/api/javascript/do
        */
       do <R> (doFunction: (thisObject: this) => R): R;
     }
@@ -2263,14 +2268,14 @@ declare namespace rethinkdb {
       /**
        * Get information about a ReQL value.
        *
-       * https://rethinkdb.com/api/javascript/info
+       * https://www.rethinkdb.com/api/javascript/info
        */
       info (): RObject<any>;
 
       /**
        * Gets the type of a value.
        *
-       * https://rethinkdb.com/api/javascript/type_of
+       * https://www.rethinkdb.com/api/javascript/type_of
        */
       typeOf (): RString<TypeOf>;
     }
@@ -2279,7 +2284,7 @@ declare namespace rethinkdb {
       /**
        * Run a query on a connection. The callback will get either an error, a single JSON result, or a cursor, depending on the query.
        *
-       * https://rethinkdb.com/api/javascript/run
+       * https://www.rethinkdb.com/api/javascript/run
        */
       run (connection: Connection, cb: Callback<T>): void;
       run (connection: Connection, options: RunOptions, cb: Callback<T>): void;
@@ -2290,21 +2295,21 @@ declare namespace rethinkdb {
       /**
        * Lazily iterate over the result set one element at a time.
        *
-       * https://rethinkdb.com/api/javascript/each
+       * https://www.rethinkdb.com/api/javascript/each
        */
       each (callback: Callback<T>, onFinishedCallback?: Callback<T>): void;
 
       /**
        * Lazily iterate over a cursor, array, or feed one element at a time. `eachAsync` always returns a promise that will be resolved once all rows are returned.
        *
-       * https://rethinkdb.com/api/javascript/each_async
+       * https://www.rethinkdb.com/api/javascript/each_async
        */
       eachAsync (processFunction: (element: T, rowFinished?: (err: any) => void) => any, finalFunction?: (err?: Error) => any): Bluebird<void>;
 
       /**
        * Get the next element in the cursor.
        *
-       * https://rethinkdb.com/api/javascript/next
+       * https://www.rethinkdb.com/api/javascript/next
        */
       next (callback: Callback<T>): void;
       next (): Bluebird<T>;
@@ -2312,7 +2317,7 @@ declare namespace rethinkdb {
       /**
        * Retrieve all results and pass them as an array to the given callback.
        *
-       * https://rethinkdb.com/api/javascript/to_array
+       * https://www.rethinkdb.com/api/javascript/to_array
        */
       toArray (callback: Callback<Array<T>>): void;
       toArray (): Bluebird<Array<T>>;
@@ -2394,14 +2399,14 @@ declare namespace rethinkdb {
    *
    * This is analogous to using **apply** in JavaScript.
    *
-   * https://rethinkdb.com/api/javascript/args
+   * https://www.rethinkdb.com/api/javascript/args
    */
   export function args <T> (array: r.ArrayLike<T>): RSpecial<'ARGS'>;
 
   /**
    * Merge two or more sequences.
    *
-   * https://rethinkdb.com/api/javascript/union
+   * https://www.rethinkdb.com/api/javascript/union
    */
   export function union <T, Other> (stream: RStream<T>, sequence: r.SequenceLike<Other>, ...sequencesOrOptions: (r.SequenceLike<Other> | UnionOptions<T>)[]): RStream<T | Other>;
   export function union <T, Other> (stream: RStream<T>, sequence: r.SequenceLike<Other>, options?: UnionOptions<T>): RStream<T | Other>;
@@ -2421,7 +2426,7 @@ declare namespace rethinkdb {
   /**
    * Encapsulate binary data within a query.
    *
-   * https://rethinkdb.com/api/javascript/binary
+   * https://www.rethinkdb.com/api/javascript/binary
    */
   export function binary (data: any): RBinary;
 
@@ -2430,7 +2435,7 @@ declare namespace rethinkdb {
    *
    * The `branch` command takes 2n+1 arguments: pairs of conditional expressions and commands to be executed if the conditionals return any value but `false` or `null` (i.e., "truthy" values), with a final "else" command to be evaluated if all of the conditionals are `false` or `null`.
    *
-   * https://rethinkdb.com/api/javascript/branch
+   * https://www.rethinkdb.com/api/javascript/branch
    */
   export function branch <T extends RValue<any>> (test: r.BooleanLike<boolean>, trueAction: T, test2: r.BooleanLike<boolean>, test2Action: T, falseAction: T): T;
   export function branch <T extends RValue<any>> (test: r.BooleanLike<boolean>, trueAction: T, falseAction: T): T;
@@ -2454,14 +2459,14 @@ declare namespace rethinkdb {
   /**
    * Rounds the given value up, returning the smallest integer value greater than or equal to the given value (the value's ceiling).
    *
-   * https://rethinkdb.com/api/javascript/ceil
+   * https://www.rethinkdb.com/api/javascript/ceil
    */
   export function ceil (number: r.NumberLike<number>): RNumber<number>;
 
   /**
    * Construct a circular line or polygon. A circle in RethinkDB is a polygon or line _approximating_ a circle of a given radius around a given center, consisting of a specified number of vertices (default 32).
    *
-   * https://rethinkdb.com/api/javascript/circle
+   * https://www.rethinkdb.com/api/javascript/circle
    */
   export function circle (longitudeAndlatitude: [r.NumberLike<number>, r.NumberLike<number>] | RArray<number>, radius: r.NumberLike<number>, options?: CircleOptions): RGeometry<any>;
   export function circle (point: RPoint, radius: r.NumberLike<number>, options?: CircleOptions): RGeometry<any>;
@@ -2469,68 +2474,98 @@ declare namespace rethinkdb {
   /**
    * Create a new connection to the database server.
    */
-  export function connect (cb: (err: Error | void, conn: Connection) => void): void;
-  export function connect (host: string, cb: (err: Error | void, conn: Connection) => void): void;
-  export function connect (options: ConnectOptions, cb: (err: Error | void, conn: Connection) => void): void;
+  export function connect (cb: Callback<Connection>): void;
+  export function connect (host: string, cb: Callback<Connection>): void;
+  export function connect (options: ConnectOptions, cb: Callback<Connection>): void;
   export function connect (host?: string): Bluebird<Connection>;
   export function connect (options?: ConnectOptions): Bluebird<Connection>;
 
   /**
    * Reference a database.
    *
-   * https://rethinkdb.com/api/javascript/db
+   * https://www.rethinkdb.com/api/javascript/db
    */
   export function db (dbName: r.StringLike<string>): RDb;
 
   /**
    * Create a database. A RethinkDB database is a collection of tables, similar to relational databases.
    *
-   * https://rethinkdb.com/api/javascript/db_create
+   * https://www.rethinkdb.com/api/javascript/db_create
    */
   export function dbCreate (dbName: r.StringLike<string>): RObject<DbCreateResult>;
 
   /**
    * Drop a database. The database, all its tables, and corresponding data will be deleted.
    *
-   * https://rethinkdb.com/api/javascript/db_drop
+   * https://www.rethinkdb.com/api/javascript/db_drop
    */
   export function dbDrop (dbName: r.StringLike<string>): RObject<DbDropResult>;
 
   /**
    * List all database names in the system. The result is a list of strings.
    *
-   * https://rethinkdb.com/api/javascript/db_list
+   * https://www.rethinkdb.com/api/javascript/db_list
    */
   export function dbList (): RArray<string>;
 
   /**
    * To specify the ordering, wrap the attribute with either r.asc or r.desc (defaults to ascending).
+   *
+   * https://www.rethinkdb.com/api/javascript/desc
    */
   export function desc <T extends string> (func: T | r.StringLike<T>): RSpecial<'ORDER_BY'>;
 
   /**
    * To specify the ordering, wrap the attribute with either r.asc or r.desc (defaults to ascending).
+   *
+   * https://www.rethinkdb.com/api/javascript/asc
    */
   export function asc <T extends string> (func: T | r.StringLike<T>): RSpecial<'ORDER_BY'>;
 
   /**
+   * Finds the minimum element of a sequence.
+   *
+   * https://www.rethinkdb.com/api/javascript/min
+   */
+  export function min <T extends string> (sequence: r.SequenceLike<r.StringLike<T>>, option: r.MinPredicate<T>): RString<T>;
+  export function min <T extends number> (sequence: r.SequenceLike<r.NumberLike<T>>, option: r.MinPredicate<T>): RNumber<T>;
+  export function min <T extends boolean> (sequence: r.SequenceLike<r.BooleanLike<T>>, option: r.MinPredicate<T>): RBoolean<T>;
+  export function min (sequence: r.SequenceLike<r.TimeLike>, option: r.MinPredicate<RTime>): RTime;
+  export function min (sequence: r.SequenceLike<r.BinaryLike>, option: r.MinPredicate<RBinary>): RBinary;
+  export function min <T> (sequence: r.SequenceLike<r.ObjectLike<T>>, option: r.MinPredicate<RObject<T>>): RObject<T>;
+  export function min <T> (sequence: r.SequenceLike<T>, option: r.MinPredicate<T>): RDatum<T>;
+
+  /**
+   * Finds the maximum element of a sequence.
+   *
+   * https://www.rethinkdb.com/api/javascript/max
+   */
+  export function max <T extends string> (sequence: r.SequenceLike<r.StringLike<T>>, option: r.MaxPredicate<T>): RString<T>;
+  export function max <T extends number> (sequence: r.SequenceLike<r.NumberLike<T>>, option: r.MaxPredicate<T>): RNumber<T>;
+  export function max <T extends boolean> (sequence: r.SequenceLike<r.BooleanLike<T>>, option: r.MaxPredicate<T>): RBoolean<T>;
+  export function max (sequence: r.SequenceLike<r.TimeLike>, option: r.MaxPredicate<RTime>): RTime;
+  export function max (sequence: r.SequenceLike<r.BinaryLike>, option: r.MaxPredicate<RBinary>): RBinary;
+  export function max <T> (sequence: r.SequenceLike<r.ObjectLike<T>>, option: r.MaxPredicate<RObject<T>>): RObject<T>;
+  export function max <T> (sequence: r.SequenceLike<T>, option: r.MaxPredicate<T>): RDatum<T>;
+
+  /**
    * Create a time object based on seconds since epoch. The first argument is a double and will be rounded to three decimal places (millisecond-precision).
    *
-   * https://rethinkdb.com/api/javascript/epoch_time
+   * https://www.rethinkdb.com/api/javascript/epoch_time
    */
   export function epochTime (epochTime: r.NumberLike<number>): RTime;
 
   /**
    * Throw a runtime error. If called with no arguments inside the second argument to `default`, re-throw the current error.
    *
-   * https://rethinkdb.com/api/javascript/error
+   * https://www.rethinkdb.com/api/javascript/error
    */
   export function error (message: r.StringLike<string>): RSpecial<'ERROR'>;
 
   /**
    * Construct a ReQL JSON object from a native object.
    *
-   * https://rethinkdb.com/api/javascript/expr
+   * https://www.rethinkdb.com/api/javascript/expr
    */
   export function expr <T extends number> (expression: r.NumberLike<T>): RNumber<T>;
   export function expr <T extends boolean> (expression: r.BooleanLike<T>): RBoolean<T>;
@@ -2551,56 +2586,56 @@ declare namespace rethinkdb {
   /**
    * Rounds the given value down, returning the largest integer value less than or equal to the given value (the value's floor).
    *
-   * https://rethinkdb.com/api/javascript/floor
+   * https://www.rethinkdb.com/api/javascript/floor
    */
   export function floor (number: r.NumberLike<number>): RNumber<number>;
 
   /**
    * Convert a [GeoJSON](http://geojson.org) object to a ReQL geometry object.
    *
-   * https://rethinkdb.com/api/javascript/geojson
+   * https://www.rethinkdb.com/api/javascript/geojson
    */
   export function geojson (geojson: Object | RObject<any>): RGeometry<Object>;
 
   /**
    * Compute the distance between a point and another geometry object. At least one of the geometry objects specified must be a point.
    *
-   * https://rethinkdb.com/api/javascript/distance
+   * https://www.rethinkdb.com/api/javascript/distance
    */
   export function distance (geometry1: RGeometry<any>, geometry2: RGeometry<any>, options?: DistanceOptions): RNumber<number>;
 
   /**
    * Retrieve data from the specified URL over HTTP. The return type depends on the `resultFormat` option, which checks the `Content-Type` of the response by default.
    *
-   * https://rethinkdb.com/api/javascript/http
+   * https://www.rethinkdb.com/api/javascript/http
    */
   export function http <T> (url: r.StringLike<string>, options?: HttpOptions): RDatum<T>;
 
   /**
    * Create a time object based on an ISO 8601 date-time string (e.g. '2013-01-01T01:01:01+00:00'). We support all valid ISO 8601 formats except for week dates. If you pass an ISO 8601 date-time without a time zone, you must specify the time zone with the `defaultTimezone` argument. Read more about the ISO 8601 format at [Wikipedia](http://en.wikipedia.org/wiki/ISO_8601).
    *
-   * https://rethinkdb.com/api/javascript/iso8601
+   * https://www.rethinkdb.com/api/javascript/iso8601
    */
   export function ISO8601 (iso8601Date: r.StringLike<string>, options?: { defaultTimezone?: r.StringLike<string> }): RTime;
 
   /**
    * Create a javascript expression.
    *
-   * https://rethinkdb.com/api/javascript/js
+   * https://www.rethinkdb.com/api/javascript/js
    */
   export function js <T> (jsString: r.StringLike<string>, options?: { timeout?: number }): RDatum<T>;
 
   /**
    * Parse a JSON string on the server.
    *
-   * https://rethinkdb.com/api/javascript/json
+   * https://www.rethinkdb.com/api/javascript/json
    */
   export function json <T> (jsonString: r.StringLike<string>): RDatum<T>;
 
   /**
    * Construct a geometry object of type Line.
    *
-   * https://rethinkdb.com/api/javascript/line
+   * https://www.rethinkdb.com/api/javascript/line
    */
   export function line (...lonAndLat: Array<[r.NumberLike<number>, r.NumberLike<number>]>): RLine;
   export function line (...points: RPoint[]): RLine;
@@ -2608,7 +2643,7 @@ declare namespace rethinkdb {
   /**
    * Replace an object in a field instead of merging it with an existing object in a `merge` or `update` operation.
    *
-   * https://rethinkdb.com/api/javascript/literal
+   * https://www.rethinkdb.com/api/javascript/literal
    */
   export function literal <T> (object: RBase<T>): RSpecial<'LITERAL'>;
   export function literal <T> (object: r.SequenceLike<T>): RSpecial<'LITERAL'>;
@@ -2618,28 +2653,28 @@ declare namespace rethinkdb {
   /**
    * Return a time object representing the current time in UTC. The command now() is computed once when the server receives the query, so multiple instances of r.now() will always return the same time inside a query.
    *
-   * https://rethinkdb.com/api/javascript/now
+   * https://www.rethinkdb.com/api/javascript/now
    */
   export function now (): RTime;
 
   /**
    * Creates an object from a list of key-value pairs, where the keys must be strings. `r.object(A, B, C, D)` is equivalent to `r.expr([[A, B], [C, D]]).coerce_to('OBJECT')`.
    *
-   * https://rethinkdb.com/api/javascript/object
+   * https://www.rethinkdb.com/api/javascript/object
    */
   export function object <T> (...keyAndValues: any[]): RObject<T>;
 
   /**
    * Construct a geometry object of type Point. The point is specified by two floating point numbers, the longitude (−180 to 180) and the latitude (−90 to 90) of the point on a perfect sphere.
    *
-   * https://rethinkdb.com/api/javascript/point
+   * https://www.rethinkdb.com/api/javascript/point
    */
   export function point (longitude: r.NumberLike<number>, latitude: r.NumberLike<number>): RPoint;
 
   /**
    * Construct a geometry object of type Polygon.
    *
-   * https://rethinkdb.com/api/javascript/polygon
+   * https://www.rethinkdb.com/api/javascript/polygon
    */
   export function polygon (lon1Andlat1: [r.NumberLike<number>, r.NumberLike<number>], ...more: Array<[r.NumberLike<number>, r.NumberLike<number>]>): RPolygon;
   export function polygon (point1: RPoint, ...points: Array<RPoint>): RPolygon;
@@ -2647,7 +2682,7 @@ declare namespace rethinkdb {
   /**
    * Generate a random number between given (or implied) bounds. `random` takes zero, one or two arguments.
    *
-   * https://rethinkdb.com/api/javascript/random
+   * https://www.rethinkdb.com/api/javascript/random
    */
   export function random (min: r.NumberLike<number>, max: r.NumberLike<number>, options?: RandomOptions): RNumber<number>;
   export function random (number: r.NumberLike<number>, options?: RandomOptions): RNumber<number>;
@@ -2656,7 +2691,7 @@ declare namespace rethinkdb {
   /**
    * Generate a stream of sequential integers in a specified range.
    *
-   * https://rethinkdb.com/api/javascript/range
+   * https://www.rethinkdb.com/api/javascript/range
    */
   export function range (startValue: r.NumberLike<number>, endValue: r.NumberLike<number>): RStream<number>;
   export function range (endValue: r.NumberLike<number>): RStream<number>;
@@ -2665,14 +2700,14 @@ declare namespace rethinkdb {
   /**
    * Rounds the given value to the nearest whole integer.
    *
-   * https://rethinkdb.com/api/javascript/round
+   * https://www.rethinkdb.com/api/javascript/round
    */
   export function round (number: r.NumberLike<number>): RNumber<number>;
 
   /**
    * Returns the currently visited document.
    *
-   * https://rethinkdb.com/api/javascript/row
+   * https://www.rethinkdb.com/api/javascript/row
    */
   export var row: Row;
 
@@ -2689,7 +2724,7 @@ declare namespace rethinkdb {
    * - `seconds` is a double. Its value will be rounded to three decimal places (millisecond-precision).
    * - `timezone` can be `'Z'` (for UTC) or a string with the format `±[hh]:[mm]`.
    *
-   * https://rethinkdb.com/api/javascript/time
+   * https://www.rethinkdb.com/api/javascript/time
    */
   export function time (year: r.NumberLike<number>, month: r.NumberLike<number>, day: r.NumberLike<number>, hour: r.NumberLike<number>, minute: r.NumberLike<number>, second: r.NumberLike<number>, timezone?: r.StringLike<string>): RTime;
   export function time (year: r.NumberLike<number>, month: r.NumberLike<number>, day: r.NumberLike<number>, timezone?: r.StringLike<string>): RTime;
@@ -2697,14 +2732,14 @@ declare namespace rethinkdb {
   /**
    * Return a UUID (universally unique identifier), a string that can be used as a unique ID.
    *
-   * https://rethinkdb.com/api/javascript/uuid
+   * https://www.rethinkdb.com/api/javascript/uuid
    */
   export function uuid (deterministicStringToHash?: r.StringLike<string>): RString<string>;
 
   /**
    * Wait for a table or all the tables in a database to be ready. A table may be temporarily unavailable after creation, rebalancing or reconfiguring. The `wait` command blocks until the given table (or database) is fully up to date.
    *
-   * https://rethinkdb.com/api/javascript/wait
+   * https://www.rethinkdb.com/api/javascript/wait
    */
   export function wait (table: RTable<any>, options?: WaitOptions): RObject<WaitResult>;
   export function wait (database: RDb, options?: WaitOptions): RObject<WaitResult>;
@@ -2712,49 +2747,49 @@ declare namespace rethinkdb {
   /**
    * Compute the logical "and" of one or more values.
    *
-   * https://rethinkdb.com/api/javascript/and
+   * https://www.rethinkdb.com/api/javascript/and
    */
   export function and (...bools: Array<r.BooleanLike<boolean>>): RBoolean<boolean>;
 
   /**
    * Compute the logical inverse (not) of an expression.
    *
-   * https://rethinkdb.com/api/javascript/not
+   * https://www.rethinkdb.com/api/javascript/not
    */
   export function not (bool: r.BooleanLike<boolean>): RBoolean<boolean>;
 
   /**
    * Compute the logical "or" of one or more values.
    *
-   * https://rethinkdb.com/api/javascript/or
+   * https://www.rethinkdb.com/api/javascript/or
    */
   export function or (...bools: Array<r.BooleanLike<boolean>>): RBoolean<boolean>;
 
   /**
    * Select all documents in a table. This command can be chained with other commands to do further processing on the data.
    *
-   * https://rethinkdb.com/api/javascript/table
+   * https://www.rethinkdb.com/api/javascript/table
    */
   export function table <T> (name: r.StringLike<string>, options?: TableOptions): RTable<T>;
 
   /**
    * Create a table. A RethinkDB table is a collection of JSON documents.
    *
-   * https://rethinkdb.com/api/javascript/table_create
+   * https://www.rethinkdb.com/api/javascript/table_create
    */
   export function tableCreate (tableName: r.StringLike<string>, options?: TableCreateOptions): RObject<TableCreateResult>;
 
   /**
    * Drop a table. The table and all its data will be deleted.
    *
-   * https://rethinkdb.com/api/javascript/table_drop
+   * https://www.rethinkdb.com/api/javascript/table_drop
    */
   export function tableDrop (tableName: r.StringLike<string>): RObject<TableDropResult>;
 
   /**
    * List all table names in a database. The result is a list of strings.
    *
-   * https://rethinkdb.com/api/javascript/table_list
+   * https://www.rethinkdb.com/api/javascript/table_list
    */
   export function tableList (): RArray<string>;
 
@@ -2764,7 +2799,7 @@ declare namespace rethinkdb {
     /**
      * Close a cursor. Closing a cursor cancels the corresponding query and frees the memory associated with the open request.
      *
-     * https://rethinkdb.com/api/javascript/close-cursor
+     * https://www.rethinkdb.com/api/javascript/close-cursor
      */
     close (): void;
   }
@@ -2776,7 +2811,7 @@ declare namespace rethinkdb {
     /**
      * Close an open connection. If no callback is provided, a promise will be returned.
      *
-     * https://rethinkdb.com/api/javascript/close
+     * https://www.rethinkdb.com/api/javascript/close
      */
     close (cb: Callback<void>): void;
     close (options: CloseOptions, cb: Callback<void>): void;
@@ -2785,7 +2820,7 @@ declare namespace rethinkdb {
     /**
      * Close and reopen a connection.
      *
-     * https://rethinkdb.com/api/javascript/reconnect
+     * https://www.rethinkdb.com/api/javascript/reconnect
      */
     reconnect (cb: Callback<Connection>): void;
     reconnect (options: CloseOptions, cb: Callback<Connection>): void;
@@ -2794,7 +2829,7 @@ declare namespace rethinkdb {
     /**
      * `noreplyWait` ensures that previous queries with the `noreply` flag have been processed by the server. Note that this guarantee only applies to queries run on the given connection.
      *
-     * https://rethinkdb.com/api/javascript/noreply_wait
+     * https://www.rethinkdb.com/api/javascript/noreply_wait
      */
     noreplyWait (callback: Callback<void>): void;
     noreplyWait (): Bluebird<void>;
@@ -2802,7 +2837,7 @@ declare namespace rethinkdb {
     /**
      * Change the default database on this connection.
      *
-     * https://rethinkdb.com/api/javascript/use
+     * https://www.rethinkdb.com/api/javascript/use
      */
     use (dbName: string): void;
 
