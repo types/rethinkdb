@@ -2065,7 +2065,7 @@ declare namespace rethinkdb {
          *
          * https://www.rethinkdb.com/api/javascript/nth
          */
-        nth (index: r.NumberLike<number>): RObject<T>;
+        nth (index: r.NumberLike<number>): RObject<T | null>;
       }
 
       export interface Selection <T> {
@@ -2074,7 +2074,7 @@ declare namespace rethinkdb {
          *
          * https://www.rethinkdb.com/api/javascript/nth
          */
-        nth (index: r.NumberLike<number>): RSelectionObject<T>;
+        nth (index: r.NumberLike<number>): RSelectionObject<T | null>;
       }
     }
 
