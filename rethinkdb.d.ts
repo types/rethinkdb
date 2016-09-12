@@ -688,7 +688,7 @@ declare namespace rethinkdb {
     r.Avg<T>,
     r.Contains<T>,
     r.Count.Sequence<T>,
-    r.Default<T | null>,
+    r.Default<T>,
     r.ForEach<T>,
     r.Group<T>,
     r.IsEmpty,
@@ -1042,6 +1042,7 @@ declare namespace rethinkdb {
     type ObjectLike <T extends Object> = (() => T | RValue<T>) | T | RValue<T>;
     type ArrayLike <T> = (() => Array<T> | RArray<T>) | Array<T> | RArray<T>;
     type BooleanLike <T extends boolean> = T | RValue<T>;
+    type NullLike = null | RValue<null>;
     type TimeLike = (() => Date | RTime) | Date | RTime | NumberLike<number>;
     type SequenceLike <T> = RSelection<T> | RTableSlice<T> | RTable<T> | RStream<T> | RArray<T> | RGroupedStream<any, T>;
     type BinaryLike = (() => Buffer | RBinary) | Buffer | RBinary;
@@ -1971,8 +1972,8 @@ declare namespace rethinkdb {
        *
        * https://www.rethinkdb.com/api/javascript/default
        */
-      default (defaultValue: T | RValue<T>): this;
-      default (onError: (error: RString<string>) => RSpecial<'ERROR'> | T | RValue<T>): this;
+      default (defaultValue: r.NullLike | T | RValue<T>): this;
+      default (onError: (error: RString<string>) => RSpecial<'ERROR'> | r.NullLike | T | RValue<T>): this;
     }
 
     export interface Keys {
@@ -2192,7 +2193,7 @@ declare namespace rethinkdb {
        *
        * https://www.rethinkdb.com/api/javascript/update
        */
-      update (objectOrFunction: T | ((item: RSelectionObject<T>) => T), options?: UpdateOptions): RObject<UpdateResult<T>>;
+      update (objectOrFunction: T | ((item: RSelectionObject<T>) => r.ObjectLike<T> | r.NullLike), options?: UpdateOptions): RObject<UpdateResult<T>>;
     }
 
     export interface CoerceTo {
