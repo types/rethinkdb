@@ -224,9 +224,10 @@ declare namespace rethinkdb {
     r.Seconds, r.Minutes, r.Hours, r.Month, r.Year, r.Day,
     r.TimeOfDay, r.Timezone, r.ToEpochTime, r.ToISO8601 {}
 
-  export interface RError extends RValue<Error> {}
-
-  export interface RSpecial <T> extends RValue<T> {}
+  export interface RSpecial <T extends 'ARGS' | 'ORDER_BY' | 'ERROR' | 'MAXVAL' | 'MINVAL' | 'LITERAL'> extends
+    r.CoerceTo {
+    type: T
+  }
 
   export interface RObject <T> extends
     RValue<T>,
@@ -253,7 +254,7 @@ declare namespace rethinkdb {
     'TABLE_SLICE' | 'TABLE';
 
   type IndexFunction <T> = RValue<any> | Array<RValue<any>> | ((item: RValue<T> | RObject<T>) => RValue<any>);
-  type KeyType = r.StringLike<string> | r.NumberLike<number> | r.TimeLike | r.ArrayLike<r.StringLike<string> | r.NumberLike<number> | r.TimeLike> | RSpecial<any>;
+  type KeyType = r.StringLike<string> | r.NumberLike<number> | r.TimeLike | r.ArrayLike<r.StringLike<string> | r.NumberLike<number> | r.TimeLike> | RSpecial<'ARGS'>;
 
   interface IndexOptions {
     index?: string;
@@ -1579,7 +1580,7 @@ declare namespace rethinkdb {
        *
        * https://rethinkdb.com/api/javascript/filter
        */
-      filter (predicate: FilterPredicate<T>, options?: { default: boolean | RError }): this;
+      filter (predicate: FilterPredicate<T>, options?: { default: boolean | RSpecial<'ERROR'> }): this;
     }
 
     interface Distinct <TOut> {
@@ -1663,8 +1664,6 @@ declare namespace rethinkdb {
     }
 
     namespace OrderBy {
-      type OrderByParam <T> = KeyType | ((item: RObject<T>) => RValue<any> | KeyType);
-
       interface Table <T> {
         /**
          * Sort the sequence by document values of the given key(s). To specify the ordering, wrap the attribute with either `r.asc` or `r.desc` (defaults to ascending).
@@ -1673,8 +1672,8 @@ declare namespace rethinkdb {
          *
          * https://rethinkdb.com/api/javascript/order_by
          */
-        orderBy (keysOrFunctions: OrderByParam<T>, ...moreKeysFunctionsOrOptions: (OrderByParam<T> | { index: r.StringLike<string> })[]): RTableSlice<T>;
-        orderBy (options: { index: r.StringLike<string> }): RTableSlice<T>;
+        orderBy (keysOrFunctions: OrderByPredicate<T>, ...moreKeysFunctionsOrOptions: (OrderByPredicate<T> | OrderByOptions)[]): RTableSlice<T>;
+        orderBy (options: OrderByOptions): RTableSlice<T>;
       }
 
       export interface Selection <T> {
@@ -1685,7 +1684,7 @@ declare namespace rethinkdb {
          *
          * https://rethinkdb.com/api/javascript/order_by
          */
-        orderBy (keyOrFunction: OrderByParam<T>, ...moreKeysOrFunctions: OrderByParam<T>[]): RSelection<T>;
+        orderBy (keyOrFunction: OrderByPredicate<T>, ...moreKeysOrFunctions: OrderByPredicate<T>[]): RSelection<T>;
       }
 
       export interface Sequence <T> {
@@ -1696,7 +1695,7 @@ declare namespace rethinkdb {
          *
          * https://rethinkdb.com/api/javascript/order_by
          */
-        orderBy (keyOrFunction: OrderByParam<T>, ...moreKeysOrFunctions: OrderByParam<T>[]): RArray<T>;
+        orderBy (keyOrFunction: OrderByPredicate<T>, ...moreKeysOrFunctions: OrderByPredicate<T>[]): RArray<T>;
       }
     }
 
@@ -1968,7 +1967,7 @@ declare namespace rethinkdb {
        * https://rethinkdb.com/api/javascript/default
        */
       default (defaultValue: T | RValue<T>): this;
-      default (onError: (error: RError) => T | RValue<T>): this;
+      default (onError: (error: RString<string>) => RSpecial<'ERROR'> | T | RValue<T>): this;
     }
 
     interface Keys {
@@ -1996,6 +1995,12 @@ declare namespace rethinkdb {
        * https://rethinkdb.com/api/javascript/for_each
        */
       forEach <T, U> (writeFunction: (item: RValue<T> | RObject<T>) => RObject<WriteResult<T, U>>): RObject<WriteResult<T, U>>;
+    }
+
+    type OrderByPredicate <T> = KeyType | RSpecial<'ORDER_BY'> | ((item: RObject<T>) => RValue<any> | KeyType)
+
+    interface OrderByOptions {
+      index: r.StringLike<string> | RSpecial<'ORDER_BY'>
     }
 
     export interface GroupOptions {
@@ -2391,7 +2396,7 @@ declare namespace rethinkdb {
    *
    * https://rethinkdb.com/api/javascript/args
    */
-  export function args <T> (array: r.ArrayLike<T>): RSpecial<T[]>;
+  export function args <T> (array: r.ArrayLike<T>): RSpecial<'ARGS'>;
 
   /**
    * Merge two or more sequences.
@@ -2406,12 +2411,12 @@ declare namespace rethinkdb {
   /**
    * You may also use the special constants `r.minval` and `r.maxval` for boundaries, which represent “less than any index key” and “more than any index key” respectively. For instance, if you use `r.minval` as the lower key, then between will return all documents whose primary keys (or indexes) are less than the specified upper key.
    */
-  export var maxval: RSpecial<any>;
+  export var maxval: RSpecial<'MAXVAL'>;
 
   /**
    * You may also use the special constants `r.minval` and `r.maxval` for boundaries, which represent “less than any index key” and “more than any index key” respectively. For instance, if you use `r.minval` as the lower key, then between will return all documents whose primary keys (or indexes) are less than the specified upper key.
    */
-  export var minval: RSpecial<any>;
+  export var minval: RSpecial<'MINVAL'>;
 
   /**
    * Encapsulate binary data within a query.
@@ -2501,12 +2506,12 @@ declare namespace rethinkdb {
   /**
    * To specify the ordering, wrap the attribute with either r.asc or r.desc (defaults to ascending).
    */
-  export function desc <T> (func: T | RValue<T>): RSpecial<T>;
+  export function desc <T extends string> (func: T | r.StringLike<T>): RSpecial<'ORDER_BY'>;
 
   /**
    * To specify the ordering, wrap the attribute with either r.asc or r.desc (defaults to ascending).
    */
-  export function asc <T> (func: T | RValue<T>): RSpecial<T>;
+  export function asc <T extends string> (func: T | r.StringLike<T>): RSpecial<'ORDER_BY'>;
 
   /**
    * Create a time object based on seconds since epoch. The first argument is a double and will be rounded to three decimal places (millisecond-precision).
@@ -2520,7 +2525,7 @@ declare namespace rethinkdb {
    *
    * https://rethinkdb.com/api/javascript/error
    */
-  export function error (message: r.StringLike<string>): RError;
+  export function error (message: r.StringLike<string>): RSpecial<'ERROR'>;
 
   /**
    * Construct a ReQL JSON object from a native object.
@@ -2530,17 +2535,17 @@ declare namespace rethinkdb {
   export function expr <T extends number> (expression: r.NumberLike<T>): RNumber<T>;
   export function expr <T extends boolean> (expression: r.BooleanLike<T>): RBoolean<T>;
   export function expr <T extends string> (expression: r.StringLike<T>): RString<T>;
-  export function expr <T extends Array<any>> (expression: r.ArrayLike<T>): RArray<T>;
+  export function expr <T extends Array<U>, U> (expression: r.ArrayLike<U>): RArray<U>;
   export function expr <T extends Date> (expression: r.TimeLike): RTime;
   export function expr <T extends RNumber<number>> (expression: r.NumberLike<number>): T;
   export function expr <T extends RBoolean<boolean>> (expression: r.BooleanLike<boolean>): T;
   export function expr <T extends RString<string>> (expression: r.StringLike<string>): T;
-  export function expr <T extends RArray<any>> (expression: r.ArrayLike<any>): T;
-  export function expr <T extends RObject<any>> (expression: r.ObjectLike<any>): T;
+  export function expr <T extends RArray<U>, U> (expression: r.ArrayLike<U>): T;
+  export function expr <T extends RObject<U>, U> (expression: r.ObjectLike<U>): T;
   export function expr <T extends RTime> (expression: r.TimeLike): T;
   export function expr <T extends RGeometry<any>> (expression: T): T;
-  export function expr <T extends {}> (expression: r.ObjectLike<any>): RObject<T>;
-  export function expr <T> (expression: RValue<T>): RDatum<T>;
+  export function expr <T> (expression: r.ObjectLike<T>): RObject<T>;
+  export function expr <T> (expression: RBase<T>): RDatum<T>;
   export function expr <T> (expression: T): RDatum<T>;
 
   /**
@@ -2605,8 +2610,10 @@ declare namespace rethinkdb {
    *
    * https://rethinkdb.com/api/javascript/literal
    */
-  export function literal <T> (object: T): RSpecial<T>;
-  export function literal (): RSpecial<void>;
+  export function literal <T> (object: RBase<T>): RSpecial<'LITERAL'>;
+  export function literal <T> (object: r.SequenceLike<T>): RSpecial<'LITERAL'>;
+  export function literal <T> (object: T): RSpecial<'LITERAL'>;
+  export function literal (): RSpecial<'LITERAL'>;
 
   /**
    * Return a time object representing the current time in UTC. The command now() is computed once when the server receives the query, so multiple instances of r.now() will always return the same time inside a query.
