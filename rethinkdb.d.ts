@@ -255,7 +255,7 @@ declare namespace rethinkdb {
     'SELECTION<OBJECT>' | 'SELECTION<STREAM>' | 'STREAM' | 'STRING' |
     'TABLE_SLICE' | 'TABLE';
 
-  type IndexFunction <T> = RValue<any> | Array<RValue<any>> | ((item: RValue<T> | RObject<T>) => RValue<any>);
+  type IndexFunction <T> = RValue<any> | Array<RValue<any>> | ((item: RObject<T>) => RValue<any> | Array<RValue<any>>);
   type KeyType = r.StringLike<string> | r.NumberLike<number> | r.TimeLike | RSpecial<'MINVAL'> | RSpecial<'MAXVAL'> | r.ArrayLike<r.StringLike<string> | r.NumberLike<number> | r.TimeLike | RSpecial<'ARGS'> | RSpecial<'MINVAL'> | RSpecial<'MAXVAL'>> | RSpecial<'ARGS'>;
 
   export interface IndexOptions {
@@ -756,8 +756,8 @@ declare namespace rethinkdb {
      *
      * https://www.rethinkdb.com/api/javascript/index_create
      */
-    indexCreate (indexName: r.StringLike<string>, indexFunction: IndexFunction<T>, options?: IndexCreateOptions): RObject<IndexCreateResult>;
     indexCreate (indexName: r.StringLike<string>, options?: IndexCreateOptions): RObject<IndexCreateResult>;
+    indexCreate (indexName: r.StringLike<string>, indexFunction: IndexFunction<T>, options?: IndexCreateOptions): RObject<IndexCreateResult>;
 
     /**
      * Delete a previously created secondary index of this table.
