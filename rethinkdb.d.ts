@@ -245,6 +245,11 @@ declare namespace rethinkdb {
     r.Values<any> {}
 
   export interface RSelectionObject <T> extends
+    RObject<T | null>,
+    r.Operations<T>,
+    r.Changes<T> {}
+
+  export interface RSelectionObjectResult <T> extends
     RObject<T>,
     r.Operations<T>,
     r.Changes<T> {}
@@ -726,7 +731,7 @@ declare namespace rethinkdb {
      *
      * https://www.rethinkdb.com/api/javascript/get
      */
-    get (key: KeyType): RSelectionObject<T | null>;
+    get (key: KeyType): RSelectionObject<T>;
 
     /**
      * Get all documents where the given value matches the value of the requested index.
@@ -801,7 +806,7 @@ declare namespace rethinkdb {
      *
      * https://www.rethinkdb.com/api/javascript/status
      */
-    status (): RSelectionObject<StatusResult>;
+    status (): RSelectionObjectResult<StatusResult>;
 
     /**
      * `sync` ensures that writes on a given table are written to permanent storage. Queries that specify soft durability (`{durability: 'soft'}`) do not give such guarantees, so `sync` can be used to ensure the state of these queries. A call to `sync` does not return until all previous writes to the table are persisted.
@@ -1639,7 +1644,7 @@ declare namespace rethinkdb {
     }
 
     namespace Merge {
-      type MergeParam <T> = RSelectionObject<T> | ((item: RObject<T>) => (RObject<T> | T)) | T;
+      type MergeParam <T> = RSelectionObjectResult<T> | ((item: RObject<T>) => (RObject<T> | T)) | T;
 
       export interface Array <T> {
         /**
@@ -2074,7 +2079,7 @@ declare namespace rethinkdb {
          *
          * https://www.rethinkdb.com/api/javascript/nth
          */
-        nth (index: r.NumberLike<number>): RSelectionObject<T | null>;
+        nth (index: r.NumberLike<number>): RSelectionObject<T>;
       }
     }
 
@@ -2186,14 +2191,14 @@ declare namespace rethinkdb {
        *
        * https://www.rethinkdb.com/api/javascript/replace
        */
-      replace (objectOrFunction: T | ((item: RSelectionObject<T>) => T), options?: UpdateOptions): RObject<ReplaceResult<T>>;
+      replace (objectOrFunction: T | ((item: RSelectionObjectResult<T>) => T), options?: UpdateOptions): RObject<ReplaceResult<T>>;
 
       /**
        * Update JSON documents in a table. Accepts a JSON document, a ReQL expression, or a combination of the two. You can pass options like `returnChanges` that will return the old and new values of the row you have modified.
        *
        * https://www.rethinkdb.com/api/javascript/update
        */
-      update (objectOrFunction: T | ((item: RSelectionObject<T>) => r.ObjectLike<T> | r.NullLike), options?: UpdateOptions): RObject<UpdateResult<T>>;
+      update (objectOrFunction: T | ((item: RSelectionObjectResult<T>) => r.ObjectLike<T> | r.NullLike), options?: UpdateOptions): RObject<UpdateResult<T>>;
     }
 
     export interface CoerceTo {
@@ -2232,7 +2237,7 @@ declare namespace rethinkdb {
        *
        * https://www.rethinkdb.com/api/javascript/config
        */
-      config (): RSelectionObject<Config>;
+      config (): RSelectionObjectResult<Config>;
 
       /**
        * Rebalances the shards of a table. When called on a database, all the tables in that database will be rebalanced.
