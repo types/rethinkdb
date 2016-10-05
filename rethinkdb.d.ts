@@ -1224,7 +1224,7 @@ declare namespace rethinkdb {
          *
          * https://www.rethinkdb.com/api/javascript/map
          */
-        map <Out> (mappingExpression: RValue<Out> | ((item: RDatum<T>) => Out)): RArray<Out>;
+        map <Out> (mappingExpression: RValue<Out> | ((item: RDatum<T>) => RValue<Out> | Out)): RArray<Out>;
       }
 
       export interface Sequence <T> {
@@ -1233,7 +1233,7 @@ declare namespace rethinkdb {
          *
          * https://www.rethinkdb.com/api/javascript/map
          */
-        map <Out> (mappingExpression: RValue<Out> | ((item: RDatum<T>) => Out)): RStream<Out>;
+        map <Out> (mappingExpression: RValue<Out> | ((item: RDatum<T>) => RValue<Out> | Out)): RStream<Out>;
       }
     }
 
@@ -2553,6 +2553,16 @@ declare namespace rethinkdb {
   export function max (sequence: r.SequenceLike<r.BinaryLike>, option: r.MaxPredicate<RBinary>): RBinary;
   export function max <T> (sequence: r.SequenceLike<r.ObjectLike<T>>, option: r.MaxPredicate<RObject<T>>): RObject<T>;
   export function max <T> (sequence: r.SequenceLike<T>, option: r.MaxPredicate<T>): RDatum<T>;
+
+  /**
+   * Transform each element of one or more sequences by applying a mapping function to them. If `map` is run with two or more sequences, it will iterate for as many items as there are in the shortest sequence.
+   *
+   * https://www.rethinkdb.com/api/javascript/map
+   */
+  export function map <T, Out> (sequence: r.ArrayLike<T>, mappingExpression: RValue<Out> | ((item: RDatum<T>) => RValue<Out> | Out)): RArray<Out>;
+  export function map <T1, T2, Out> (sequence1: r.ArrayLike<T1>, sequence2: r.ArrayLike<T2>, mappingExpression: RValue<Out> | ((item1: RDatum<T1>, item2: RDatum<T2>) => RValue<Out> | Out)): RArray<Out>;
+  export function map <T1, T2, T3, Out> (sequence1: r.ArrayLike<T1>, sequence2: r.ArrayLike<T2>, sequence3: r.ArrayLike<T3>, mappingExpression: RValue<Out> | ((item1: RDatum<T1>, item2: RDatum<T2>, item3: RDatum<T3>) => RValue<Out> | Out)): RArray<Out>;
+  export function map <T1, T2, T3, T4, Out> (sequence1: r.ArrayLike<T1>, sequence2: r.ArrayLike<T2>, sequence3: r.ArrayLike<T3>, sequence4: r.ArrayLike<T4>, mappingExpression: RValue<Out> | ((item1: RDatum<T1>, item2: RDatum<T2>, item3: RDatum<T3>, item4: RDatum<T4>) => RValue<Out> | Out)): RArray<Out>;
 
   /**
    * Create a time object based on seconds since epoch. The first argument is a double and will be rounded to three decimal places (millisecond-precision).

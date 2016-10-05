@@ -11,25 +11,43 @@ const options: r.ConnectOptions = {
   const conn = await r.connect(options);
   const testDb = `test${Math.random().toString(36).substr(2)}`;
 
-  const dbCreateResult = await r.dbCreate(testDb).run(conn);
+  try {
+    const dbCreateResult = await r.dbCreate(testDb).run(conn);
 
-  assert.equal(dbCreateResult.dbs_created, 1);
+    assert.equal(dbCreateResult.dbs_created, 1);
 
-  conn.use(testDb);
+    conn.use(testDb);
 
-  const tableCreateResult = await r.tableCreate('Test').run(conn);
+    const tableCreateResult = await r.tableCreate('Test').run(conn);
 
-  assert.equal(tableCreateResult.tables_created, 1);
+    assert.equal(tableCreateResult.tables_created, 1);
 
-  assert.deepEqual(await r.tableList().run(conn), ['Test']);
+    assert.deepEqual(await r.tableList().run(conn), ['Test']);
 
-  const tableDropResult = await r.tableDrop('Test').run(conn);
+    const insertedNewId = await r.table('Test').insert({ hello: true }).run(conn);
 
-  assert.equal(tableDropResult.tables_dropped, 1);
+    assert.ok(Array.isArray(insertedNewId.generated_keys));
 
-  const dbDropResult = await r.dbDrop(testDb).run(conn);
+    const insertedUseId = await r.table('Test').insert({ id: '123' }).run(conn);
 
-  assert.equal(dbDropResult.dbs_dropped, 1);
+    assert.ok(typeof insertedUseId.generated_keys === 'undefined');
 
-  conn.close();
+    const result = await r.map([1, 2, 3], (v) => v.mul(10)).run(conn);
+
+    assert.deepEqual(result, [10, 20, 30]);
+
+    const tableDropResult = await r.tableDrop('Test').run(conn);
+
+    assert.equal(tableDropResult.tables_dropped, 1);
+
+    const dbDropResult = await r.dbDrop(testDb).run(conn);
+
+    assert.equal(dbDropResult.dbs_dropped, 1);
+  } catch (err) {
+    console.log(err);
+
+    process.exit(1);
+  } finally {
+    conn.close();
+  }
 })();
