@@ -2519,14 +2519,16 @@ declare namespace rethinkdb {
    *
    * https://www.rethinkdb.com/api/javascript/desc
    */
-  export function desc <T extends string> (func: T | r.StringLike<T>): RSpecial<'ORDER_BY'>;
+  export function desc (prop: string | RValue<any>): RSpecial<'ORDER_BY'>;
+  export function desc <T> (func: (row: RDatum<T>) => RValue<any>): RSpecial<'ORDER_BY'>;
 
   /**
    * To specify the ordering, wrap the attribute with either r.asc or r.desc (defaults to ascending).
    *
    * https://www.rethinkdb.com/api/javascript/asc
    */
-  export function asc <T extends string> (func: T | r.StringLike<T>): RSpecial<'ORDER_BY'>;
+  export function asc (prop: string | RValue<any>): RSpecial<'ORDER_BY'>;
+  export function asc <T> (func: (row: RDatum<T>) => RValue<any>): RSpecial<'ORDER_BY'>;
 
   /**
    * Finds the minimum element of a sequence.
