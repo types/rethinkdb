@@ -261,7 +261,7 @@ declare namespace rethinkdb {
     'TABLE_SLICE' | 'TABLE';
 
   type IndexFunction <T> = RValue<any> | Array<RValue<any>> | ((item: RObject<T>) => RValue<any> | Array<RValue<any>>);
-  type KeyType = r.StringLike<string> | r.NumberLike<number> | r.TimeLike | RSpecial<'MINVAL'> | RSpecial<'MAXVAL'> | r.ArrayLike<r.StringLike<string> | r.NumberLike<number> | r.TimeLike | RSpecial<'ARGS'> | RSpecial<'MINVAL'> | RSpecial<'MAXVAL'>> | RSpecial<'ARGS'>;
+  type KeyType = r.StringLike<string> | r.NumberLike<number> | r.TimeLike | RSpecial<'MINVAL'> | RSpecial<'MAXVAL'> | RSpecial<'ARGS'> | r.NullLike | r.ArrayLike<r.StringLike<string> | r.NumberLike<number> | r.TimeLike | RSpecial<'MINVAL'> | RSpecial<'MAXVAL'> | r.NullLike>;
 
   export interface IndexOptions {
     index?: string;
