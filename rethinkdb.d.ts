@@ -55,6 +55,7 @@ declare namespace rethinkdb {
     r.OrderBy.Sequence<T>,
     r.Bracket.Array<T>,
     r.GetField.Array<T>,
+    r.Nth.Sequence<T>,
     r.WithFields.Array {}
 
   export interface RArrayJoin <Left, Right> extends
@@ -80,6 +81,7 @@ declare namespace rethinkdb {
     r.Count.Sequence<T>,
     r.HasFields<RStream<T>>,
     r.Distinct.Sequence<T>,
+    r.Nth.Sequence<T>,
     r.Sample<RArray<T>> {}
 
   export interface RStreamJoin <Left, Right> extends
