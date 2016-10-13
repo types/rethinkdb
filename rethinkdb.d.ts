@@ -584,6 +584,10 @@ declare namespace rethinkdb {
     created: number;
   }
 
+  export interface IndexDropResult {
+    dropped: number;
+  }
+
   export interface Config {
     id: string;
     name: string;
@@ -771,7 +775,7 @@ declare namespace rethinkdb {
      *
      * https://www.rethinkdb.com/api/javascript/index_drop
      */
-    indexDrop (indexName: r.StringLike<string>): RObject<any>;
+    indexDrop (indexName: r.StringLike<string>): RObject<IndexDropResult>;
 
     /**
      * List all the secondary indexes of this table.
