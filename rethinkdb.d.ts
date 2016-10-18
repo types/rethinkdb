@@ -1833,6 +1833,7 @@ declare namespace rethinkdb {
          *
          * https://www.rethinkdb.com/api/javascript/bracket
          */
+        <T extends RValue<any>> (attr: r.StringLike<string>): T;
         <T> (attr: r.StringLike<string>): RDatum<T>;
       }
 
@@ -1861,6 +1862,8 @@ declare namespace rethinkdb {
          *
          * https://www.rethinkdb.com/api/javascript/bracket
          */
+        <T extends RValue<any>> (attr: r.StringLike<string>): T;
+        <T extends ArrOfT[], ArrOfT> (attr: r.StringLike<string>): T;
         <T> (attr: r.StringLike<string>): RDatum<T>;
         (index: r.NumberLike<number>): RDatum<T>;
       }
