@@ -1833,8 +1833,22 @@ declare namespace rethinkdb {
          *
          * https://www.rethinkdb.com/api/javascript/bracket
          */
-        <T extends RValue<any>> (attr: r.StringLike<string>): T;
-        <T> (attr: r.StringLike<string>): RDatum<T>;
+        (name: r.StringLike<string>): RDatum<any>;
+        <T extends RNumber<number>> (name: r.StringLike<string>): RNumber<number>;
+        <T extends RString<string>> (name: r.StringLike<string>): RString<string>;
+        <T extends RArray<any>> (name: r.StringLike<string>): T;
+        <T extends RBoolean<boolean>> (name: r.StringLike<string>): RBoolean<boolean>;
+        <T extends RTime> (name: r.StringLike<string>): RTime;
+        <T extends RLine> (name: r.StringLike<string>): RLine;
+        <T extends RPoint> (name: r.StringLike<string>): RPoint;
+        <T extends RGeometry<any>> (name: r.StringLike<string>): T;
+        <T extends RObject<any>> (name: r.StringLike<string>): T;
+        <T extends number> (name: r.StringLike<string>): RNumber<number>;
+        <T extends string> (name: r.StringLike<string>): RString<string>;
+        <T extends boolean> (name: r.StringLike<string>): RBoolean<boolean>;
+        <T extends Date> (name: r.StringLike<string>): RTime;
+        <T extends Object> (name: r.StringLike<string>): RObject<T>;
+        <T extends Array<ArrOfT>, ArrOfT> (name: r.StringLike<string>): RArray<ArrOfT>;
       }
 
       export interface Stream {
@@ -1862,10 +1876,24 @@ declare namespace rethinkdb {
          *
          * https://www.rethinkdb.com/api/javascript/bracket
          */
-        <T extends RValue<any>> (attr: r.StringLike<string>): T;
-        <T extends ArrOfT[], ArrOfT> (attr: r.StringLike<string>): T;
-        <T> (attr: r.StringLike<string>): RDatum<T>;
+        (name: r.StringLike<string>): RDatum<any>;
         (index: r.NumberLike<number>): RDatum<T>;
+
+        <T extends RNumber<number>> (name: r.StringLike<string>): RNumber<number>;
+        <T extends RString<string>> (name: r.StringLike<string>): RString<string>;
+        <T extends RArray<any>> (name: r.StringLike<string>): T;
+        <T extends RBoolean<boolean>> (name: r.StringLike<string>): RBoolean<boolean>;
+        <T extends RTime> (name: r.StringLike<string>): RTime;
+        <T extends RLine> (name: r.StringLike<string>): RLine;
+        <T extends RPoint> (name: r.StringLike<string>): RPoint;
+        <T extends RGeometry<any>> (name: r.StringLike<string>): T;
+        <T extends RObject<any>> (name: r.StringLike<string>): T;
+        <T extends number> (name: r.StringLike<string>): RNumber<number>;
+        <T extends string> (name: r.StringLike<string>): RString<string>;
+        <T extends boolean> (name: r.StringLike<string>): RBoolean<boolean>;
+        <T extends Date> (name: r.StringLike<string>): RTime;
+        <T extends Object> (name: r.StringLike<string>): RObject<T>;
+        <T extends Array<ArrOfT>, ArrOfT> (name: r.StringLike<string>): RArray<ArrOfT>;
       }
     }
 
@@ -2390,25 +2418,6 @@ declare namespace rethinkdb {
     data: any;
   }
 
-  export interface Row extends RDatum<any> {
-    (name: r.StringLike<string>): RDatum<any>;
-    <T extends RNumber<number>> (name: r.StringLike<string>): RNumber<number>;
-    <T extends RString<string>> (name: r.StringLike<string>): RString<string>;
-    <T extends RArray<any>> (name: r.StringLike<string>): T;
-    <T extends RBoolean<boolean>> (name: r.StringLike<string>): RBoolean<boolean>;
-    <T extends RTime> (name: r.StringLike<string>): RTime;
-    <T extends RLine> (name: r.StringLike<string>): RLine;
-    <T extends RPoint> (name: r.StringLike<string>): RPoint;
-    <T extends RGeometry<any>> (name: r.StringLike<string>): T;
-    <T extends RObject<any>> (name: r.StringLike<string>): T;
-    <T extends number> (name: r.StringLike<string>): RNumber<number>;
-    <T extends string> (name: r.StringLike<string>): RString<string>;
-    <T extends boolean> (name: r.StringLike<string>): RBoolean<boolean>;
-    <T extends Date> (name: r.StringLike<string>): RTime;
-    <T extends Object> (name: r.StringLike<string>): RObject<T>;
-    <T extends Array<ArrOfT>, ArrOfT> (name: r.StringLike<string>): RArray<ArrOfT>;
-  }
-
   /**
    * `r.args` is a special term that's used to splice an array of arguments into another term. This is useful when you want to call a variadic term such as `getAll` with a set of arguments produced at runtime.
    *
@@ -2736,7 +2745,7 @@ declare namespace rethinkdb {
    *
    * https://www.rethinkdb.com/api/javascript/row
    */
-  export var row: Row;
+  export var row: RDatum<any>;
 
   /**
    * Create a time object for a specific time.
