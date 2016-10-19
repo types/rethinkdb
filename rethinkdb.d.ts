@@ -2463,9 +2463,6 @@ declare namespace rethinkdb {
    *
    * https://www.rethinkdb.com/api/javascript/branch
    */
-  export function branch <T extends RValue<any>> (test: r.BooleanLike<boolean>, trueAction: T, test2: r.BooleanLike<boolean>, test2Action: T, falseAction: T): T;
-  export function branch <T extends RValue<any>> (test: r.BooleanLike<boolean>, trueAction: T, falseAction: T): T;
-  export function branch <T extends RValue<any>> (test: r.BooleanLike<boolean>, ...testsAndActions: (T | r.BooleanLike<boolean>)[]): T;
   export function branch <T extends number> (test: r.BooleanLike<boolean>, trueAction: r.NumberLike<T>, test2: r.BooleanLike<boolean>, test2Action: r.NumberLike<T>, falseAction: r.NumberLike<T>): RNumber<T>;
   export function branch <T extends number> (test: r.BooleanLike<boolean>, trueAction: r.NumberLike<T>, falseAction: r.NumberLike<T>): RNumber<T>;
   export function branch <T extends number> (test: r.BooleanLike<boolean>, ...testsAndActions: (r.NumberLike<T> | r.BooleanLike<boolean>)[]): RNumber<T>;
@@ -2475,12 +2472,18 @@ declare namespace rethinkdb {
   export function branch <T extends boolean> (test: r.BooleanLike<boolean>, trueAction: r.BooleanLike<T>, test2: r.BooleanLike<boolean>, test2Action: r.BooleanLike<T>, falseAction: r.BooleanLike<T>): RBoolean<T>;
   export function branch <T extends boolean> (test: r.BooleanLike<boolean>, trueAction: r.BooleanLike<T>, falseAction: r.BooleanLike<T>): RBoolean<T>;
   export function branch <T extends boolean> (test: r.BooleanLike<boolean>, ...testsAndActions: (r.BooleanLike<T> | r.BooleanLike<boolean>)[]): RBoolean<T>;
+  export function branch <T extends RValue<any>> (test: r.BooleanLike<boolean>, trueAction: T, test2: r.BooleanLike<boolean>, test2Action: T, falseAction: T): T;
+  export function branch <T extends RValue<any>> (test: r.BooleanLike<boolean>, trueAction: T, falseAction: T): T;
+  export function branch <T extends RValue<any>> (test: r.BooleanLike<boolean>, ...testsAndActions: (T | r.BooleanLike<boolean>)[]): T;
   export function branch <T> (test: r.BooleanLike<boolean>, trueAction: r.ArrayLike<T>, test2: r.BooleanLike<boolean>, test2Action: r.ArrayLike<T>, falseAction: r.ArrayLike<T>): RArray<T>;
   export function branch <T> (test: r.BooleanLike<boolean>, trueAction: r.ArrayLike<T>, falseAction: r.ArrayLike<T>): RArray<T>;
   export function branch <T> (test: r.BooleanLike<boolean>, ...testsAndActions: (r.ArrayLike<T> | r.BooleanLike<boolean>)[]): RArray<T>;
-  export function branch <T> (test: r.BooleanLike<boolean>, trueAction: T, test2: r.BooleanLike<boolean>, test2Action: T, falseAction: T): RObject<T>;
-  export function branch <T> (test: r.BooleanLike<boolean>, trueAction: T, falseAction: T): RObject<T>;
-  export function branch <T> (test: r.BooleanLike<boolean>, ...testsAndActions: (T | r.BooleanLike<boolean>)[]): RObject<T>;
+  export function branch <T> (test: r.BooleanLike<boolean>, trueAction: T | RValue<T>, test2: r.BooleanLike<boolean>, test2Action: T | RValue<T>, falseAction: T | RValue<T>): RDatum<T>;
+  export function branch <T> (test: r.BooleanLike<boolean>, trueAction: T | RValue<T>, falseAction: T | RValue<T>): RDatum<T>;
+  export function branch <T> (test: r.BooleanLike<boolean>, ...testsAndActions: (T | RValue<T> | r.BooleanLike<boolean>)[]): RDatum<T>;
+  export function branch <T extends RValue<U>, U> (test: r.BooleanLike<boolean>, trueAction: T | U, test2: r.BooleanLike<boolean>, test2Action: T | U, falseAction: T | U): T;
+  export function branch <T extends RValue<U>, U> (test: r.BooleanLike<boolean>, trueAction: T | U, falseAction: T | U): T;
+  export function branch <T extends RValue<U>, U> (test: r.BooleanLike<boolean>, ...testsAndActions: (T | U | r.BooleanLike<boolean>)[]): T;
 
   /**
    * Rounds the given value up, returning the smallest integer value greater than or equal to the given value (the value's ceiling).
