@@ -1848,7 +1848,8 @@ declare namespace rethinkdb {
         <T extends boolean> (name: r.StringLike<string>): RBoolean<boolean>;
         <T extends Date> (name: r.StringLike<string>): RTime;
         <T extends Object> (name: r.StringLike<string>): RObject<T>;
-        <T extends Array<ArrOfT>, ArrOfT> (name: r.StringLike<string>): RArray<ArrOfT>;
+        <T> (name: r.StringLike<string>): RDatum<T>;
+        <T extends ArrOfT[], ArrOfT> (name: r.StringLike<string>): RArray<ArrOfT>;
       }
 
       export interface Stream {
@@ -1893,7 +1894,8 @@ declare namespace rethinkdb {
         <T extends boolean> (name: r.StringLike<string>): RBoolean<boolean>;
         <T extends Date> (name: r.StringLike<string>): RTime;
         <T extends Object> (name: r.StringLike<string>): RObject<T>;
-        <T extends Array<ArrOfT>, ArrOfT> (name: r.StringLike<string>): RArray<ArrOfT>;
+        <T> (name: r.StringLike<string>): RDatum<T>;
+        <T extends ArrOfT[], ArrOfT> (name: r.StringLike<string>): RArray<ArrOfT>;
       }
     }
 
