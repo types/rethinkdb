@@ -709,6 +709,7 @@ declare namespace rethinkdb {
     r.Reduce<T>,
     r.Slice,
     r.Sum<T>,
+    r.Merge.Stream<T>,
     r.Union.Stream<T>,
     r.ConcatMap.Stream<T>,
     r.Filter<T>,
