@@ -164,6 +164,7 @@ declare namespace rethinkdb {
     r.Upcase,
     // Array.
     r.Add<r.DatumLike>,
+    r.Contains<T>,
     r.Append<T>,
     r.ChangeAt<T>,
     r.DeleteAt<T>,
