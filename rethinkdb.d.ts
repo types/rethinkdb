@@ -1879,7 +1879,24 @@ declare namespace rethinkdb {
          * https://www.rethinkdb.com/api/javascript/bracket
          */
         (name: r.StringLike<string>): RDatum<any>;
-        (index: r.NumberLike<number>): RDatum<T>;
+        (name: r.NumberLike<number>): RDatum<any>;
+
+        <T extends RNumber<number>> (name: r.NumberLike<number>): RNumber<number>;
+        <T extends RString<string>> (name: r.NumberLike<number>): RString<string>;
+        <T extends RArray<any>> (name: r.NumberLike<number>): T;
+        <T extends RBoolean<boolean>> (name: r.NumberLike<number>): RBoolean<boolean>;
+        <T extends RTime> (name: r.NumberLike<number>): RTime;
+        <T extends RLine> (name: r.NumberLike<number>): RLine;
+        <T extends RPoint> (name: r.NumberLike<number>): RPoint;
+        <T extends RGeometry<any>> (name: r.NumberLike<number>): T;
+        <T extends RObject<any>> (name: r.NumberLike<number>): T;
+        <T extends number> (name: r.NumberLike<number>): RNumber<number>;
+        <T extends string> (name: r.NumberLike<number>): RString<string>;
+        <T extends boolean> (name: r.NumberLike<number>): RBoolean<boolean>;
+        <T extends Date> (name: r.NumberLike<number>): RTime;
+        <T extends Object> (name: r.NumberLike<number>): RObject<T>;
+        <T> (name: r.NumberLike<number>): RDatum<T>;
+        <T extends ArrOfT[], ArrOfT> (name: r.NumberLike<number>): RArray<ArrOfT>;
 
         <T extends RNumber<number>> (name: r.StringLike<string>): RNumber<number>;
         <T extends RString<string>> (name: r.StringLike<string>): RString<string>;
