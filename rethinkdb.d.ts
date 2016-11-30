@@ -65,6 +65,7 @@ declare namespace rethinkdb {
   export interface RStream <T> extends
     r.Run<CursorResult<T>>,
     r.Query,
+    r.CoerceTo<T>,
     r.Changes<T>,
     r.OrderBy.Sequence<T>,
     r.Union.Stream<T>,
@@ -92,7 +93,7 @@ declare namespace rethinkdb {
     r.Run<CursorResult<T>>,
     r.Operations<T>,
     r.Query,
-    r.CoerceTo,
+    r.CoerceTo<T>,
     r.Changes<T>,
     r.Operators<T>,
     r.Avg<T>,
@@ -126,7 +127,7 @@ declare namespace rethinkdb {
   export interface RBase <T> extends
     r.Do,
     r.Query,
-    r.CoerceTo,
+    r.CoerceTo<T>,
     r.ToJSON,
     r.Default<T>,
     r.Operators<T> {}
@@ -230,7 +231,7 @@ declare namespace rethinkdb {
     r.TimeOfDay, r.Timezone, r.ToEpochTime, r.ToISO8601 {}
 
   export interface RSpecial <T extends 'ARGS' | 'ORDER_BY' | 'ERROR' | 'MAXVAL' | 'MINVAL' | 'LITERAL'> extends
-    r.CoerceTo {
+    r.CoerceTo<T> {
     type: T
   }
 
@@ -696,7 +697,7 @@ declare namespace rethinkdb {
     r.Changes<T>,
     r.Skip,
     r.Limit,
-    r.CoerceTo,
+    r.CoerceTo<T>,
     r.Avg<T>,
     r.Contains<T>,
     r.Count.Sequence<T>,
@@ -2259,7 +2260,7 @@ declare namespace rethinkdb {
       update (objectOrFunction: T | ((item: RSelectionObjectResult<T>) => r.ObjectLike<T> | r.NullLike), options?: UpdateOptions): RObject<UpdateResult<T>>;
     }
 
-    export interface CoerceTo {
+    export interface CoerceTo <T> {
       /**
        * Convert a value of one type into another.
        *
@@ -2267,8 +2268,8 @@ declare namespace rethinkdb {
        */
       coerceTo (type: 'string'): RString<string>;
       coerceTo (type: 'number'): RNumber<number>;
-      coerceTo <T> (type: 'array'): RArray<T>;
-      coerceTo <T> (type: 'object'): RObject<T>;
+      coerceTo (type: 'array'): RArray<T>;
+      coerceTo (type: 'object'): RObject<T>;
       coerceTo (type: 'binary'): RBinary;
       coerceTo (type: string): RDatum<any>;
     }
