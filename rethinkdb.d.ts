@@ -51,6 +51,10 @@ declare namespace rethinkdb {
     r.Union.Array<T>,
     r.SpliceAt<T>,
     r.Count.Datum,
+    r.EqJoin.Array<T>,
+    r.OuterJoin.Array<T>,
+    r.InnerJoin.Array<T>,
+    r.Without.Array,
     r.Pluck.Array,
     r.OrderBy.Sequence<T>,
     r.Bracket.Array<T>,
@@ -80,6 +84,10 @@ declare namespace rethinkdb {
     r.Merge.Stream<T>,
     r.Map.Sequence<T>,
     r.Count.Sequence<T>,
+    r.EqJoin.Sequence<T>,
+    r.OuterJoin.Sequence<T>,
+    r.InnerJoin.Sequence<T>,
+    r.Without.Sequence,
     r.HasFields<RStream<T>>,
     r.Distinct.Sequence<T>,
     r.Nth.Sequence<T>,
@@ -117,6 +125,10 @@ declare namespace rethinkdb {
     r.OrderBy.Selection<T>,
     r.Union.Stream<T>,
     r.ConcatMap.Stream<T>,
+    r.EqJoin.Sequence<T>,
+    r.OuterJoin.Sequence<T>,
+    r.InnerJoin.Sequence<T>,
+    r.Without.Sequence,
     r.Filter<T>,
     r.Bracket.Stream,
     r.GetField.Stream,
@@ -718,6 +730,10 @@ declare namespace rethinkdb {
     r.Pluck.Sequence,
     r.Bracket.Stream,
     r.GetField.Stream,
+    r.EqJoin.Sequence<T>,
+    r.OuterJoin.Sequence<T>,
+    r.InnerJoin.Sequence<T>,
+    r.Without.Sequence,
     r.HasFields<RStream<T>>,
     r.Sample<RArray<T>>,
     r.Nth.Selection<T>,
@@ -1563,7 +1579,7 @@ declare namespace rethinkdb {
     }
 
     namespace EqJoin {
-      export interface array<T> {
+      export interface Array<T> {
         /**
          * Join tables using a field or function on the left-hand sequence matching primary keys or secondary indexes on the right-hand table. `eqJoin` is more efficient than other ReQL join types, and operates much faster. Documents in the result set consist of pairs of left-hand and right-hand documents, matched when the field on the left-hand side exists and is non-null and an entry with that field's value exists in the specified index on the right-hand side.
          *
@@ -1573,7 +1589,7 @@ declare namespace rethinkdb {
         eqJoin <TLeft, TRight> (predicate_function: (item: RObject<T>) => TLeft, rightTable: RTable<TRight>, options?: JoinOptions): RArrayJoin<TLeft, TRight>;
       }
 
-      export interface Stream <T> {
+      export interface Sequence <T> {
         /**
          * Join tables using a field or function on the left-hand sequence matching primary keys or secondary indexes on the right-hand table. `eqJoin` is more efficient than other ReQL join types, and operates much faster. Documents in the result set consist of pairs of left-hand and right-hand documents, matched when the field on the left-hand side exists and is non-null and an entry with that field's value exists in the specified index on the right-hand side.
          *
@@ -1633,7 +1649,7 @@ declare namespace rethinkdb {
         innerJoin <TRight> (otherSequence: r.SequenceLike<TRight>, predicate_function: JoinPredicate<T, TRight>): RArrayJoin<T, TRight>;
       }
 
-      export interface Stream <T> {
+      export interface Sequence <T> {
         /**
          * Returns an inner join of two sequences.
          *
