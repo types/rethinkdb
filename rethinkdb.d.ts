@@ -277,7 +277,11 @@ declare namespace rethinkdb {
     'TABLE_SLICE' | 'TABLE';
 
   type IndexFunction <T> = RValue<any> | Array<RValue<any>> | ((item: RObject<T>) => RValue<any> | Array<RValue<any>>);
-  type KeyType = r.StringLike<string> | r.NumberLike<number> | r.BooleanLike<boolean> | r.TimeLike | RSpecial<'MINVAL'> | RSpecial<'MAXVAL'> | RSpecial<'ARGS'> | r.ArrayLike<r.StringLike<string> | r.NumberLike<number> | r.BooleanLike<boolean> | r.TimeLike | RSpecial<'MINVAL'> | RSpecial<'MAXVAL'>>;
+  type PrimitiveKeyType = r.StringLike<string> | r.NumberLike<number> | r.BooleanLike<boolean> | r.TimeLike | RSpecial<'MINVAL'> | RSpecial<'MAXVAL'> | ArrayKeyType | RArrayKeyType | ArrayReturnsKeyType;
+  interface ArrayKeyType extends Array<PrimitiveKeyType> {}
+  interface RArrayKeyType extends RArray<PrimitiveKeyType> {}
+  interface ArrayReturnsKeyType extends r.ReturnsType<PrimitiveKeyType> {}
+  type KeyType = PrimitiveKeyType | RSpecial<'ARGS'>;
 
   export interface IndexOptions {
     index?: string;
@@ -1067,15 +1071,17 @@ declare namespace rethinkdb {
   }
 
   namespace r {
-    type NumberLike <T extends number> = (() => T | RValue<T>) | T | RValue<T>;
-    type StringLike <T extends string> = (() => T | RValue<T>) | T | RValue<T>;
-    type ObjectLike <T extends Object> = (() => T | RValue<T>) | T | RValue<T>;
-    type ArrayLike <T> = (() => Array<T> | RArray<T>) | Array<T> | RArray<T>;
+    export interface ReturnsType <T> { (): T }
+
+    type NumberLike <T extends number> = ReturnsType<T | RValue<T>> | T | RValue<T>;
+    type StringLike <T extends string> = ReturnsType<T | RValue<T>> | T | RValue<T>;
+    type ObjectLike <T extends Object> = ReturnsType<T | RValue<T>> | T | RValue<T>;
+    type ArrayLike <T> = ReturnsType<Array<T> | RArray<T>> | Array<T> | RArray<T>;
     type BooleanLike <T extends boolean> = T | RValue<T>;
     type NullLike = null | RValue<null>;
-    type TimeLike = (() => Date | RTime) | Date | RTime | NumberLike<number>;
+    type TimeLike = ReturnsType<Date | RTime | NumberLike<number>> | Date | RTime | NumberLike<number>;
     type SequenceLike <T> = RSelection<T> | RTableSlice<T> | RTable<T> | RStream<T> | RArray<T> | RGroupedStream<any, T>;
-    type BinaryLike = (() => Buffer | RBinary) | Buffer | RBinary;
+    type BinaryLike = ReturnsType<Buffer | RBinary> | Buffer | RBinary;
     type DatumLike = NumberLike<number> | StringLike<string> | ObjectLike<any> | ArrayLike<any> | BooleanLike<boolean> | TimeLike | BinaryLike;
 
     export interface Add <T> {
