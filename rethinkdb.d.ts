@@ -760,16 +760,16 @@ declare namespace rethinkdb {
      *
      * https://www.rethinkdb.com/api/javascript/get
      */
-    get (key: KeyType): RSelectionObject<T>;
+    get <U extends T> (key: KeyType): RSelectionObject<U>;
 
     /**
      * Get all documents where the given value matches the value of the requested index.
      *
      * https://www.rethinkdb.com/api/javascript/get_all
      */
-    getAll (key: KeyType, options?: IndexOptions): RSelection<T>;
-    getAll (key: KeyType, ...keys: Array<KeyType>): RSelection<T>;
-    getAll (key: KeyType, ...keysAndThenOptions: Array<KeyType | IndexOptions>): RSelection<T>;
+    getAll <U extends T> (key: KeyType, options?: IndexOptions): RSelection<U>;
+    getAll <U extends T> (key: KeyType, ...keys: Array<KeyType>): RSelection<U>;
+    getAll <U extends T> (key: KeyType, ...keysAndThenOptions: Array<KeyType | IndexOptions>): RSelection<U>;
 
     /**
      * Get all documents where the given geometry object intersects the geometry object of the requested geospatial index.
