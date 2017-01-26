@@ -749,7 +749,7 @@ declare namespace rethinkdb {
      *
      * https://www.rethinkdb.com/api/javascript/between
      */
-    between (lowerKey: KeyType, upperKey: KeyType, options?: BetweenOptions): RTableSlice<T>;
+    between <U extends T> (lowerKey: KeyType, upperKey: KeyType, options?: BetweenOptions): RTableSlice<U>;
   }
 
   export interface RTable <T> extends RTableSlice<T> {
