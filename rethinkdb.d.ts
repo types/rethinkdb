@@ -388,7 +388,7 @@ declare namespace rethinkdb {
    * RethinkDB uses promises or Node.js-style callbacks.
    */
   export interface Callback <T> {
-    (err: Error | void, res: T): void;
+    (err: Error | null | undefined, res: T): void;
   }
 
   /**
@@ -594,7 +594,7 @@ declare namespace rethinkdb {
     state: 'initializing' | 'ready';
   }
 
-  export interface ChangeFeed <T> extends ChangeSet<T | void, T | void> {
+  export interface ChangeFeed <T> extends ChangeSet<T | undefined, T | undefined> {
     type?: string;
   }
 
@@ -619,23 +619,23 @@ declare namespace rethinkdb {
 
   export interface DbCreateResult {
     dbs_created: number;
-    config_changes: ChangeSet<void, Config>[];
+    config_changes: ChangeSet<undefined, Config>[];
   }
 
   export interface DbDropResult {
     dbs_dropped: number;
     tables_dropped: number;
-    config_changes: ChangeSet<Config, void>[];
+    config_changes: ChangeSet<Config, undefined>[];
   }
 
   export interface TableCreateResult {
     tables_created: number;
-    config_changes: ChangeSet<void, Config>[];
+    config_changes: ChangeSet<undefined, Config>[];
   }
 
   export interface TableDropResult {
     tables_dropped: number;
-    config_changes: ChangeSet<Config, void>[];
+    config_changes: ChangeSet<Config, undefined>[];
   }
 
   export interface WriteResult <Old, New> {
