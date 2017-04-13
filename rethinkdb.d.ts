@@ -34,6 +34,7 @@ declare namespace rethinkdb {
     r.Add<r.ArrayLike<T>>,
     r.Append<T>,
     r.ChangeAt<T>,
+    r.Contains<T>,
     r.DeleteAt<T>,
     r.Difference<T>,
     r.InsertAt<T>,
