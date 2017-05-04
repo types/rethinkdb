@@ -1,5 +1,7 @@
 # Typed RethinkDB
 
+[![Greenkeeper badge](https://badges.greenkeeper.io/types/npm-rethinkdb.svg)](https://greenkeeper.io/)
+
 The type definition for [`rethinkdb`](https://github.com/rethinkdb/rethinkdb).
 
 ## Attribution
