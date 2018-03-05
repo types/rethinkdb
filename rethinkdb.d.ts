@@ -279,11 +279,11 @@ declare namespace rethinkdb {
     'TABLE_SLICE' | 'TABLE';
 
   type IndexFunction <T> = RValue<any> | Array<RValue<any>> | ((item: RObject<T>) => RValue<any> | Array<RValue<any>>);
-  type PrimitiveKeyType = r.StringLike<string> | r.NumberLike<number> | r.BooleanLike<boolean> | r.TimeLike | RSpecial<'MINVAL'> | RSpecial<'MAXVAL'> | ArrayKeyType | RArrayKeyType | ArrayReturnsKeyType;
+  type PrimitiveKeyType = r.StringLike<string> | r.NumberLike<number> | r.BooleanLike<boolean> | r.TimeLike | RSpecial<'MINVAL'> | RSpecial<'MAXVAL'> | RSpecial<'ARGS'> | ArrayKeyType | RArrayKeyType | ArrayReturnsKeyType;
   interface ArrayKeyType extends Array<PrimitiveKeyType> {}
   interface RArrayKeyType extends RArray<PrimitiveKeyType> {}
   interface ArrayReturnsKeyType extends r.ReturnsType<PrimitiveKeyType> {}
-  type KeyType = PrimitiveKeyType | RSpecial<'ARGS'>;
+  type KeyType = PrimitiveKeyType;
 
   export interface IndexOptions {
     index?: string;
