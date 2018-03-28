@@ -1537,7 +1537,7 @@ declare namespace rethinkdb {
 
     namespace Without {
       type Selector = r.StringLike<string> | SelectorObject;
-      type SelectorObject = { [key: string]: boolean | string | SelectorObject; };
+      type SelectorObject = { [key: string]: r.BooleanLike<boolean> | r.StringLike<string> | SelectorObject; };
 
       export interface Array {
         /**
