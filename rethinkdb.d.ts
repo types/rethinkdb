@@ -1536,13 +1536,16 @@ declare namespace rethinkdb {
     }
 
     namespace Without {
+      type Selector = r.StringLike<string> | SelectorObject;
+      type SelectorObject = { [key: string]: boolean | string | SelectorObject; };
+
       export interface Array {
         /**
          * The opposite of pluck; takes an object or a sequence of objects, and returns them with the specified paths removed.
          *
          * https://www.rethinkdb.com/api/javascript/without
          */
-        without <TWithout> (...selectors: r.StringLike<string>[]): RArray<TWithout>;
+        without <TWithout> (...selectors: Selector[]): RArray<TWithout>;
       }
 
       export interface Sequence {
@@ -1551,7 +1554,7 @@ declare namespace rethinkdb {
          *
          * https://www.rethinkdb.com/api/javascript/without
          */
-        without <TWithout> (...selectors: r.StringLike<string>[]): RStream<TWithout>;
+        without <TWithout> (...selectors: Selector[]): RStream<TWithout>;
       }
 
       export interface Object {
@@ -1560,7 +1563,7 @@ declare namespace rethinkdb {
          *
          * https://www.rethinkdb.com/api/javascript/without
          */
-        without <TWithout> (...selectors: r.StringLike<string>[]): RObject<TWithout>;
+        without <TWithout> (...selectors: Selector[]): RObject<TWithout>;
       }
     }
 
