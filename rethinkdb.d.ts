@@ -1680,7 +1680,7 @@ declare namespace rethinkdb {
     }
 
     namespace Merge {
-	    type MergeParam <T> = RSelectionObjectResult<T> | ((item: RObject<T>) => (RObject<T> | T | object)) | T;
+      type MergeParam <T> = RSelectionObjectResult<T> | ((item: RObject<T>) => (RObject<T> | T | object)) | T;
 
       export interface Array <T> {
         /**
