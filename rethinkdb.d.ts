@@ -39,7 +39,7 @@ declare namespace rethinkdb {
     r.Difference<T>,
     r.InsertAt<T>,
     r.Map.Array<T>,
-	r.Filter<T>,
+	  r.Filter<T>,
     r.Mul,
     r.Prepend<T>,
     r.SetDifference<T>,
@@ -1680,7 +1680,7 @@ declare namespace rethinkdb {
     }
 
     namespace Merge {
-	  type MergeParam <T> = RSelectionObjectResult<T> | ((item: RObject<T>) => (RObject<T> | T | object)) | T;
+	    type MergeParam <T> = RSelectionObjectResult<T> | ((item: RObject<T>) => (RObject<T> | T | object)) | T;
 
       export interface Array <T> {
         /**
