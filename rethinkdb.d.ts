@@ -39,7 +39,7 @@ declare namespace rethinkdb {
     r.Difference<T>,
     r.InsertAt<T>,
     r.Map.Array<T>,
-	  r.Filter<T>,
+    r.Filter<T>,
     r.Mul,
     r.Prepend<T>,
     r.SetDifference<T>,
