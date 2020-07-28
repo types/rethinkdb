@@ -39,6 +39,7 @@ declare namespace rethinkdb {
     r.Difference<T>,
     r.InsertAt<T>,
     r.Map.Array<T>,
+    r.Filter<T>,
     r.Mul,
     r.Prepend<T>,
     r.SetDifference<T>,
@@ -278,11 +279,11 @@ declare namespace rethinkdb {
     'TABLE_SLICE' | 'TABLE';
 
   type IndexFunction <T> = RValue<any> | Array<RValue<any>> | ((item: RObject<T>) => RValue<any> | Array<RValue<any>>);
-  type PrimitiveKeyType = r.StringLike<string> | r.NumberLike<number> | r.BooleanLike<boolean> | r.TimeLike | RSpecial<'MINVAL'> | RSpecial<'MAXVAL'> | ArrayKeyType | RArrayKeyType | ArrayReturnsKeyType;
+  type PrimitiveKeyType = r.StringLike<string> | r.NumberLike<number> | r.BooleanLike<boolean> | r.TimeLike | RSpecial<'MINVAL'> | RSpecial<'MAXVAL'> | RSpecial<'ARGS'> | ArrayKeyType | RArrayKeyType | ArrayReturnsKeyType;
   interface ArrayKeyType extends Array<PrimitiveKeyType> {}
   interface RArrayKeyType extends RArray<PrimitiveKeyType> {}
   interface ArrayReturnsKeyType extends r.ReturnsType<PrimitiveKeyType> {}
-  type KeyType = PrimitiveKeyType | RSpecial<'ARGS'>;
+  type KeyType = PrimitiveKeyType;
 
   export interface IndexOptions {
     index?: string;
@@ -1535,13 +1536,16 @@ declare namespace rethinkdb {
     }
 
     namespace Without {
+      type Selector = r.StringLike<string> | SelectorObject;
+      type SelectorObject = { [key: string]: r.BooleanLike<boolean> | r.StringLike<string> | SelectorObject; };
+
       export interface Array {
         /**
          * The opposite of pluck; takes an object or a sequence of objects, and returns them with the specified paths removed.
          *
          * https://www.rethinkdb.com/api/javascript/without
          */
-        without <TWithout> (...selectors: r.StringLike<string>[]): RArray<TWithout>;
+        without <TWithout> (...selectors: Selector[]): RArray<TWithout>;
       }
 
       export interface Sequence {
@@ -1550,7 +1554,7 @@ declare namespace rethinkdb {
          *
          * https://www.rethinkdb.com/api/javascript/without
          */
-        without <TWithout> (...selectors: r.StringLike<string>[]): RStream<TWithout>;
+        without <TWithout> (...selectors: Selector[]): RStream<TWithout>;
       }
 
       export interface Object {
@@ -1559,7 +1563,7 @@ declare namespace rethinkdb {
          *
          * https://www.rethinkdb.com/api/javascript/without
          */
-        without <TWithout> (...selectors: r.StringLike<string>[]): RObject<TWithout>;
+        without <TWithout> (...selectors: Selector[]): RObject<TWithout>;
       }
     }
 
@@ -1676,7 +1680,7 @@ declare namespace rethinkdb {
     }
 
     namespace Merge {
-      type MergeParam <T> = RSelectionObjectResult<T> | ((item: RObject<T>) => (RObject<T> | T)) | T;
+      type MergeParam <T> = RSelectionObjectResult<T> | ((item: RObject<T>) => (RObject<T> | T | object)) | T;
 
       export interface Array <T> {
         /**
